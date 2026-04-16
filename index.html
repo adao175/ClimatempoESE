@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Painel do Tempo - ESE</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+html, body {
+    margin:0;
+    padding:0;
+    height:100%;          /* força exatamente altura da tela */
+    width:100vw;           /* força exatamente largura da tela */
+    overflow:hidden;       /* 👈 REMOVE scroll vertical e horizontal */
+    font-family:Arial;
+    transition:0.3s;
+}
+
+/* ===== TEMAS ===== */
+body.dark {
+    background:#0b1220;
+    color:white;
+}
+
+body.light {
+    background:#f4f6f9;
+    color:#111;
+}
+
+/* ===== MENU ===== */
+.topbar {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 20px;
+    border-bottom:2px solid #00f0ff;
+}
+
+.tabs {
+    display:flex;
+}
+
+.tabs button {
+    padding:10px 18px;
+    border:none;
+    cursor:pointer;
+    font-weight:bold;
+    background:none;
+    color:inherit;
+}
+
+.tabs button.active {
+    border-bottom:3px solid #00f0ff;
+}
+
+/* Toggle */
+.toggle {
+    cursor:pointer;
+    padding:6px 12px;
+    border-radius:20px;
+    border:1px solid #00f0ff;
+}
+
+/* ===== MAPAS ===== */
+.map-container {
+    display:none;
+    width:100%;
+    height:100vh;
+    overflow:hidden;
+}
+
+.map-container.active {
+    display:block;
+}
+
+#mapChuva,#mapRadar,#mapRisco,#mapRegioes,#mapPrevisao {
+    width:100%;
+    height:100%;
+}
+
+/* ===== CÍRCULOS PROFISSIONAIS ===== */
+.weather-marker {
+    position:absolute;
+    transform:translate(-50%,-50%);
+}
+
+.weather-circle {
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+    font-weight:bold;
+    color:white;
+    border: 2px solid rgba(255,255,255,0.6); /* Borda sólida nítida */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: 0.3s;
+}
+
+/* Rótulo da Cidade */
+.city-label {
+    background: rgba(0, 0, 0, 0.85) !important;
+    border: 1px solid #00f0ff !important;
+    color: white !important;
+    font-weight: bold !important;
+    border-radius: 4px !important;
+    padding: 3px 8px !important;
+    font-size: 13px !important;
+    box-shadow: 0 0 8px #00f0ff;
+}
+
+.leaflet-tooltip-right:before {
+    border-right-color: #00f0ff !important;
+}
+
+/* EFEITO ONDA DE CHOQUE (SHOCKWAVE) */
+.pulse {
+    animation: shockwave 1.5s infinite ease-out;
+}
+
+@keyframes shockwave {
+    0% {
+        box-shadow: 0 0 0 0px rgba(0, 240, 255, 0.8);
+    }
+    70% {
+        box-shadow: 0 0 0 20px rgba(0, 240, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0px rgba(0, 240, 255, 0);
+    }
+}
+
+/* Dropdown */
+.dropdown{
+    position:relative;
+}
+
+.dropdown-content{
+    display:none;
+    position:absolute;
+    top:40px;
+    left:0;
+    background:#111;
+    border:1px solid #00f0ff;
+    border-radius:8px;
+    box-shadow:0 0 15px #00f0ff;
+    z-index:9999;
+    pointer-events:auto;
+}
+
+.dropdown-content button{
+    display:block;
+    width:200px;
+    padding:8px;
+    background:none;
+    border:none;
+    color:white;
+    text-align:left;
+    cursor:pointer;
+}
+
+.dropdown-content button:hover{
+    background:#00f0ff;
+    color:black;
+}
+
+.leaflet-container {
+    width:100% !important;
+    max-width:100% !important;
+    overflow:hidden !important;
+}
+/* ===== LEGENDA ===== */
+.legenda {
+    position:fixed;              /* 👈 melhor que absolute */
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+
+    width:calc(100% - 60px);     /* 👈 nunca ultrapassa a tela */
+    max-width:1000px;
+    box-sizing:border-box;       /* 👈 impede overflow por padding */
+
+    background:rgba(0,0,0,0.85);
+    padding:12px 18px;           /* 👈 corrigido (era 18x) */
+    border-radius:12px;
+    box-shadow:0 0 12px #00f0ff;
+
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:18px;
+
+    z-index:1000;
+    font-size:13px;
+    font-weight:bold;
+}
+
+.legenda-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.legenda-cor{
+    width:16px;
+    height:16px;
+    border-radius:4px;
+}
+
+* {
+    box-sizing:border-box;
+}
+
+body.light .legenda {
+    color: white;
+}
+
+canvas{
+    margin-top:8px;
+}
+
+/* ===== PAINEL 4x4 PREMIUM ===== */
+
+.painel-previsao{
+    width:100%;
+    height:calc(100vh - 140px); /* ajusta para caber abaixo topbar + título */
+    padding:15px;
+
+    display:grid;
+    grid-template-columns: repeat(4, 0.92fr); /* 👈 cards um pouco mais estreitos */
+    grid-template-rows: repeat(4, 1fr);
+
+    justify-content:center; /* centraliza grid */
+    gap:15px;
+
+    overflow:hidden; /* remove qualquer scroll */
+}
+
+/* ===== CARD DA CIDADE ===== */
+
+.card-cidade{
+    background:linear-gradient(145deg, #0f1b2d, #0b1220);
+    border:1px solid rgba(0,240,255,0.6);
+    border-radius:18px;
+    padding:9px;
+    box-shadow:
+        0 0 10px rgba(0,240,255,0.5),
+        inset 0 0 20px rgba(0,240,255,0.05);
+    padding:9px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    transition:0.3s;
+}
+
+.card-cidade:hover{
+    transform:scale(1.02);
+    box-shadow:
+        0 0 20px rgba(0,240,255,0.9),
+        inset 0 0 25px rgba(0,240,255,0.1);
+}
+
+/* ===== HEADER DA CIDADE ===== */
+
+.card-cidade h2{
+    text-align:center;
+    font-size:20px;   /* 👈 AGORA GRANDE */
+    letter-spacing:1px;
+    margin-bottom:15px;
+    font-weight:700;
+    color:#00f0ff;
+    text-shadow:0 0 10px rgba(0,240,255,0.8);
+}
+
+/* ===== LINHA DOS DIAS ===== */
+
+.linha-dias{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+}
+
+/* ===== CARD DO DIA ===== */
+
+.card-dia{
+    flex:1;
+    background:rgba(255,255,255,0.04);
+    border-radius:12px;
+    padding:8px;
+    text-align:center;
+    font-size:12px;
+    backdrop-filter:blur(6px);
+    transition:0.3s;
+}
+
+/* Hover leve */
+.card-dia:hover{
+    background:rgba(0,240,255,0.1);
+    transform:translateY(-2px);
+}
+
+/* DIA ATUAL DESTACADO */
+
+.card-dia.hoje{
+    background:#00f0ff;
+    color:#000;
+    font-weight:bold;
+    transform:scale(1.08);
+    box-shadow:0 0 15px #00f0ff;
+}
+
+/* Temperaturas */
+
+.temp-max{
+    color:#ff5c5c;
+    font-weight:bold;
+    font-size:13px;
+}
+
+.temp-min{
+    color:#4fc3f7;
+    font-size:13px;
+}
+
+/* Ícone maior */
+.card-dia div:nth-child(2){
+    font-size:24px;
+    margin:5px 0;
+}
+
+/* ===== TÍTULO PADRÃO DAS ABAS ===== */
+
+.titulo-aba{
+    display:none;
+    width:100%;
+    text-align:center;
+    font-size:28px;
+    font-weight:800;
+    letter-spacing:2px;
+    padding:15px 0;
+    color:#00f0ff;
+    text-shadow:0 0 15px rgba(0,240,255,0.9);
+    background:linear-gradient(to bottom, rgba(0,240,255,0.05), transparent);
+    border-bottom:1px solid rgba(0,240,255,0.4);
+}
+
+/* ===== LOGO ENERGISA ===== */
+.logo-container{
+    display:flex;
+    align-items:center;
+    margin-right:15px;
+}
+
+.logo-energisa{
+    height:42px;
+    width:auto;
+    object-fit:contain;
+}
+
+.logo-energisa{
+    height:42px;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.4));
+}
+
+.topbar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    
+}
+
+/* Mantém as tabs centralizadas */
+.tabs{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Área direita organizada */
+.right-area{
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Texto discreto */
+.creditos{
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
+/* Ajuste automático no modo escuro */
+body.dark .creditos {
+    color: #ffffff;
+    opacity: 0.8;
+}
+
+</style>
+</head>
+
+<body class="dark">
+
+    <div class="topbar">
+
+        <!-- LOGO ENERGISA -->
+        <div class="logo-container">
+            <img 
+                src="https://binder.com.br/wp-content/uploads/2021/01/energisa.png"
+                alt="Energisa"
+                class="logo-energisa">
+        </div>
+    
+        <div class="tabs">
+            <button class="active" onclick="filtroRegiao=null; abrirAba('chuva',this); atualizarChuva();">
+                🌧️ Visão Geral
+                </button>
+            <div class="dropdown">
+                <button id="btnRegioes" onclick="toggleDropdown(event)">
+                    🗺️ Regiões ▾
+                </button>
+                <div class="dropdown-content" id="menuDropdown">
+                    <button onclick="selecionarRegiao('aracaju')">Aracaju</button>
+                    <button onclick="selecionarRegiao('dores')">Nª Sra das Dores</button>
+                    <button onclick="selecionarRegiao('itabaiana')">Itabaiana</button>
+                    <button onclick="selecionarRegiao('lagarto')">Lagarto</button>
+                    <button onclick="selecionarRegiao('maruim')">Maruim</button>
+                    <button onclick="selecionarRegiao('propria')">Propriá</button>
+                    <button onclick="selecionarRegiao('saocristovao')">São Cristóvão</button>
+                </div>
+            </div>
+            <button onclick="abrirAba('radar',this)">📡 Radar</button>
+            <button onclick="abrirAba('risco',this)">⚡ Risco de interrupção de fornecimento</button>
+            <button onclick="abrirAba('previsao',this); atualizarPrevisao();">
+                📅 Previsão
+                </button>
+        </div>
+
+        <div class="right-area">
+            <span class="creditos">Desenvolvido por Adailson Júnior - ESE</span>
+            <div class="toggle" onclick="alternarTema()">🌙 / ☀️</div>
+        </div>
+    </div>
+
+    <div id="tituloChuva" class="titulo-aba">
+        🌧️ VISÃO GERAL
+    </div>
+    
+    <div id="tituloRegioes" class="titulo-aba">
+        🗺️ REGIÕES
+    </div>
+    
+    <div id="tituloRadar" class="titulo-aba">
+        📡 RADAR METEOROLÓGICO
+    </div>
+    
+    <div id="tituloRisco" class="titulo-aba">
+        ⚡ RISCO DE INTERRUPÇÃO DE FORNECIMENTO
+    </div>
+    
+    <div id="tituloPrevisao" class="titulo-aba">
+        🌤️ PREVISÃO DO TEMPO
+    </div>
+    
+<div id="chuva" class="map-container active"><div id="mapChuva"></div></div>
+<div id="radar" class="map-container"><div id="mapRadar"></div></div>
+<div id="risco" class="map-container"><div id="mapRisco"></div></div>
+<div id="regioes" class="map-container"><div id="mapRegioes"></div></div>
+<div id="previsao" class="map-container">
+    <div id="painelPrevisao" class="painel-previsao"></div>
+</div>
+
+<div id="contadorGlobal" style="
+    position:absolute;
+    top:60px;
+    right:20px;
+    background:rgba(0,0,0,0.75);
+    padding:8px 14px;
+    border-radius:10px;
+    font-weight:bold;
+    box-shadow:0 0 12px #00f0ff;
+    z-index:1000;
+">
+⏳ Atualiza em: <span id="tempoRestante">05:00</span>
+</div>
+
+<div id="cardDataAtual" style="
+    position:absolute;
+    top:60px;
+    left:20px;
+    background:rgba(0,0,0,0.75);
+    padding:8px 14px;
+    border-radius:10px;
+    font-weight:bold;
+    box-shadow:0 0 12px #00f0ff;
+    z-index:1000;
+">
+📅 <span id="dataAtualTexto"></span>
+</div>
+
+<div class="legenda" id="legendaClima">
+    <div class="legenda-item">
+        <div class="legenda-cor" style="background:#00bfff;"></div>
+        Céu limpo
+    </div>
+
+    <div class="legenda-item">
+        <div class="legenda-cor" style="background:#0050ff;"></div>
+        Parcialmente nublado
+    </div>
+
+    <div class="legenda-item">
+        <div class="legenda-cor" style="background:#888;"></div>
+        Nublado
+    </div>
+
+    <div class="legenda-item">
+        <div class="legenda-cor" style="background:#ffff00;"></div>
+        Chuva fraca &lt; 10 mm/h
+    </div>
+
+    <div class="legenda-item">
+        <div class="legenda-cor" style="background:#ffa500;"></div>
+        Chuva moderada 10–40 mm/h
+    </div>
+
+    <div class="legenda-item">
+        <div class="legenda-cor" style="background:#ff0000;"></div>
+        Chuva forte &gt; 40 mm/h
+    </div>
+</div>
+
+<div class="legenda" id="legendaRisco" style="display:none;">
+
+    <div class="legenda-item">
+        <div class="legenda-cor" style="background:#00ff00;"></div>
+         Risco Baixo de Interrupção de Fornecimento
+    </div>
+
+    <div class="legenda-item">
+        <div class="legenda-cor" style="background:#ffff00;"></div>
+        Risco Moderado de Interrupção de Fornecimento
+    </div>
+
+    <div class="legenda-item">
+        <div class="legenda-cor" style="background:#ff0000;"></div>
+         Risco Alto de Interrupção de Fornecimento
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+
+let filtroRegiao = null;
+
+async function obterChuvaReal(lat, lon){
+    try{
+        const response = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=precipitation&timezone=America/Sao_Paulo`
+        );
+
+        const data = await response.json();
+
+        return data?.current?.precipitation ?? 0;
+
+    }catch(error){
+        console.error("Erro ao buscar chuva:", error);
+        return 0;
+    }
+}
+
+async function obterChuvaMultipla(pontos){
+
+try{
+
+    const lats = pontos.map(p => p.lat).join(",");
+    const lons = pontos.map(p => p.lon).join(",");
+
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=precipitation,weathercode,is_day&timezone=America/Sao_Paulo&_=${Date.now()}`;
+
+    const response = await fetch(url,{ cache:"no-store" });
+
+    if(!response.ok){
+        throw new Error("Erro HTTP: " + response.status);
+    }
+
+    const data = await response.json();
+
+    // 🔥 múltiplos pontos
+    if(Array.isArray(data)){
+        return data.map(d => ({
+            mm: d.current?.precipitation ?? 0,
+            code: d.current?.weathercode ?? 0,
+            isDay: d.current?.is_day ?? 1
+        }));
+    }
+
+    // 🔥 ponto único
+    return [{
+        mm: data.current?.precipitation ?? 0,
+        code: data.current?.weathercode ?? 0,
+        isDay: data.current?.is_day ?? 1
+    }];
+
+}catch(error){
+    console.error("Erro API Open-Meteo:", error);
+    return pontos.map(() => ({
+        mm:0,
+        code:0,
+        isDay:1
+    }));
+}
+}
+
+// ===== TEMA =====
+function alternarTema(){
+    document.body.classList.toggle("dark");
+    document.body.classList.toggle("light");
+}
+
+function abrirAba(id,btn){
+
+    // remove ativação das abas
+    document.querySelectorAll(".map-container")
+        .forEach(m=>m.classList.remove("active"));
+
+    document.querySelectorAll(".tabs button")
+        .forEach(b=>b.classList.remove("active"));
+
+    // ativa aba atual
+    document.getElementById(id).classList.add("active");
+    if(btn) btn.classList.add("active");
+
+    // ===== CONTROLE DA LEGENDA =====
+    const legenda = document.getElementById("legendaClima");
+    const legendaRisco = document.getElementById("legendaRisco");
+
+    // esconde todas primeiro
+    legendaClima.style.display = "none";
+    legendaRisco.style.display = "none";
+
+    if(id === "chuva" || id === "regioes"){
+        legendaClima.style.display = "flex";
+    }
+
+    if(id === "risco"){
+        legendaRisco.style.display = "flex";
+    }
+
+    // ===== CONTROLE DOS TÍTULOS =====
+    document.querySelectorAll(".titulo-aba")
+        .forEach(t => t.style.display = "none");
+
+    const mapaTitulos = {
+        chuva: "tituloChuva",
+        regioes: "tituloRegioes",
+        radar: "tituloRadar",
+        risco: "tituloRisco",
+        previsao: "tituloPrevisao"
+    };
+
+    const tituloAtual = document.getElementById(mapaTitulos[id]);
+    if(tituloAtual){
+        tituloAtual.style.display = "block";
+    }
+
+    // ajuste do Leaflet
+    setTimeout(()=>{
+        mapChuva.invalidateSize();
+        mapRadar.invalidateSize();
+        mapRisco.invalidateSize();
+        mapRegioes.invalidateSize();
+    },200);
+}
+
+// ===== FUNÇÃO MAPA =====
+function criarMapa(id){
+    return L.map(id,{zoomControl:false}).setView([-10.8,-37.4],9.3);
+}
+
+var mapChuva=criarMapa("mapChuva");
+var mapRadar=criarMapa("mapRadar");
+var mapRisco=criarMapa("mapRisco");
+var mapRegioes=criarMapa("mapRegioes");
+
+var darkLayer='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+var lightLayer='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+L.tileLayer(darkLayer).addTo(mapChuva);
+L.tileLayer(darkLayer).addTo(mapRadar);
+L.tileLayer(darkLayer).addTo(mapRisco);
+L.tileLayer(darkLayer).addTo(mapRegioes);
+
+function atualizarBase(){
+    let url=document.body.classList.contains("dark")?darkLayer:lightLayer;
+    [mapChuva,mapRadar,mapRisco,mapRegioes].forEach(m=>{
+        m.eachLayer(layer=>{ if(layer instanceof L.TileLayer) m.removeLayer(layer); });
+        L.tileLayer(url).addTo(m);
+    });
+}
+
+document.querySelector(".toggle").addEventListener("click",()=>{
+    setTimeout(atualizarBase,100);
+});
+
+// ===== CONTORNO SERGIPE =====
+fetch("https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson")
+.then(res => {
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+})
+.then(data=>{
+    const sergipe=data.features.find(f=>f.properties.name==="Sergipe");
+    [mapChuva,mapRadar,mapRisco,mapRegioes].forEach(m=>{
+        L.geoJSON(sergipe,{ style:{ color:"#00f0ff", weight:3, fill:false } }).addTo(m);
+    });
+})
+.catch(e => console.warn("⚠️ Contorno de Sergipe não carregado:", e.message));
+
+// ===== DADOS MUNICÍPIOS =====
+var municipios = [
+{ name:"Amparo de São Francisco", lat:-10.1339, lon:-36.9300 },
+  { name:"Aquidabã",                 lat:-10.2828, lon:-37.0199 },
+  { name:"Aracaju",                  lat:-10.9095, lon:-37.0748 }, // compatível OSM :contentReference[oaicite:2]{index=2}
+  { name:"Areia Branca",           lat:-10.7578, lon:-37.3153 },
+  { name:"Barra dos Coqueiros",    lat:-10.9089, lon:-37.0386 },
+  { name:"Brejo Grande",           lat:-10.432429, lon:-36.466638 },
+  { name:"Campo do Brito",         lat:-10.7333, lon:-37.4933 },
+  { name:"Canhoba",                lat:-10.137470, lon:-36.971662 },
+  { name:"Canindé de São Francisco", lat:-9.6600, lon:-37.7894 },
+  { name:"Capela",                 lat:-10.5030, lon:-37.0520 },
+  { name:"Carira",                 lat:-10.3586, lon:-37.7064 },
+  { name:"Carmópolis",             lat:-10.6450, lon:-36.9890 },
+  { name:"Cedro de São João",      lat:-10.250449, lon:-36.882313 },
+  { name:"Cumbe",                  lat:-10.3520, lon:-37.1840 },
+  { name:"Divina Pastora",         lat:-10.6810, lon:-37.1500 },
+  { name:"Feira Nova",             lat:-10.2610, lon:-37.3140 },
+  { name:"Frei Paulo",             lat:-10.5469, lon:-37.5311 },
+  { name:"Gararu",                 lat:-9.9683,  lon:-37.0820 },
+  { name:"General Maynard",        lat:-10.6850, lon:-36.9830 },
+  { name:"Gracho Cardoso",         lat:-10.2250, lon:-37.2000 },
+  { name:"Ilha das Flores",        lat:-10.4420, lon:-36.5400 },
+  { name:"Itabaiana",              lat:-10.7000, lon:-37.4300 },
+  { name:"Itabi",                  lat:-10.127016, lon:-37.103097 },
+  { name:"Itaporanga d'Ajuda",     lat:-10.9960, lon:-37.3048 },
+  { name:"Japaratuba",             lat:-10.5889, lon:-36.9437 },
+  { name:"Japoatã",                lat:-10.3456, lon:-36.7997 },
+  { name:"Lagarto",                lat:-10.9214, lon:-37.6642 },
+  { name:"Laranjeiras",            lat:-10.8060, lon:-37.1700 },
+  { name:"Macambira",              lat:-10.6610, lon:-37.5410 },
+  { name:"Malhada dos Bois",       lat:-10.3410, lon:-36.9250 },
+  { name:"Malhador",               lat:-10.6578, lon:-37.3061 },
+  { name:"Maruim",                 lat:-10.7388, lon:-37.0822 },
+  { name:"Moita Bonita",           lat:-10.5770, lon:-37.3430 },
+  { name:"Monte Alegre de Sergipe", lat:-10.0317, lon:-37.5594 },
+  { name:"Muribeca",               lat:-10.424184, lon:-36.956840 },
+  { name:"Neópolis",               lat:-10.3156, lon:-36.5747 },
+  { name:"Nossa Senhora Aparecida", lat:-10.397990, lon:-37.453949 },
+  { name:"Nossa Senhora da Glória", lat:-10.2169, lon:-37.4222 },
+  { name:"Nossa Senhora das Dores", lat:-10.491296, lon:-37.194538 },
+  { name:"Nossa Senhora de Lourdes", lat:-10.0780, lon:-37.0600 },
+  { name:"Nossa Senhora do Socorro", lat:-10.8532, lon:-37.1270 },
+  { name:"Pacatuba",               lat:-10.4505, lon:-36.6470 },
+  { name:"Pedra Mole",             lat:-10.6130, lon:-37.6850 },
+  { name:"Pinhão",                 lat:-10.5670, lon:-37.7240 },
+  { name:"Pirambu",                lat:-10.7407, lon:-36.8589 },
+  { name:"Poço Redondo",           lat:-9.8078,  lon:-37.6828 },
+  { name:"Poço Verde",             lat:-10.7128, lon:-38.1753 },
+  { name:"Porto da Folha",         lat:-9.9222,  lon:-37.2689 },
+  { name:"Propriá",                lat:-10.2103, lon:-36.8349 },
+  { name:"Riachuelo",              lat:-10.7180, lon:-37.1960 },
+  { name:"Ribeirópolis",           lat:-10.5394, lon:-37.4367 },
+  { name:"Rosário do Catete",      lat:-10.6930, lon:-37.0350 },
+  { name:"Salgado",                lat:-11.0283, lon:-37.4789 },
+  { name:"Santa Rosa de Lima",     lat:-10.6470, lon:-37.1920 },
+  { name:"Santana do São Francisco", lat:-10.2920, lon:-36.6120 },
+  { name:"Santo Amaro das Brotas", lat:-10.7889, lon:-37.0544 },
+  { name:"São Cristóvão",          lat:-11.0090, lon:-37.2047 },
+  { name:"São Domingos",           lat:-10.7900, lon:-37.5680 },
+  { name:"São Francisco",          lat:-10.3440, lon:-36.8850 },
+  { name:"São Miguel do Aleixo",   lat:-10.3830, lon:-37.3830 },
+  { name:"Simão Dias",             lat:-10.7378, lon:-37.8068 },
+  { name:"Siriri",                 lat:-10.5960, lon:-37.1140 },
+  { name:"Telha",                  lat:-10.2080, lon:-36.8820 }
+];
+
+const regioes = {
+    aracaju:[{ name: "13 de Julho",               lat:-10.92994, lon:-37.04830 },
+  { name: "17 de Março",               lat:-10.90150, lon:-37.06500 },
+  { name: "Aeroporto",                 lat:-10.89700, lon:-37.00400 },
+  { name: "América",                   lat:-10.90800, lon:-37.07000 },
+  { name: "Areia Branca",              lat:-10.91650, lon:-37.09000 },
+  { name: "Aruana",                    lat:-10.92300, lon:-37.03000 },
+  { name: "Atalaia",                   lat:-10.98600, lon:-37.04260 },
+  { name: "Bugio",                     lat:-10.91500, lon:-37.11800 },
+  { name: "Capucho",                   lat:-10.87800, lon:-37.10500 },
+  { name: "Centro",                    lat:-10.90950, lon:-37.07480 },
+  { name: "Cidade Nova",               lat:-10.89200, lon:-37.08600 },
+  { name: "Cirurgia",                  lat:-10.91000, lon:-37.04700 },
+  { name: "Coroa do Meio",             lat:-10.94000, lon:-37.07000 },
+  { name: "Dezoito do Forte",          lat:-10.91200, lon:-37.05600 },
+  { name: "Dom Luciano",               lat:-10.93000, lon:-37.08000 },
+  { name: "Farolândia",                lat:-10.95100, lon:-37.05000 },
+  { name: "Gameleira",                 lat:-10.88000, lon:-37.03000 },
+  { name: "Getúlio Vargas",            lat:-10.89980, lon:-37.06340 },
+  { name: "Grageru",                   lat:-10.92930, lon:-37.08140 },
+  { name: "Inácio Barbosa",            lat:-10.90000, lon:-37.10000 },
+  { name: "Industrial",                lat:-10.89840, lon:-37.09000 },
+  { name: "Jabotiana",                 lat:-10.95810, lon:-37.10260 },
+  { name: "Japãozinho",                lat:-10.90000, lon:-37.11000 },
+  { name: "Jardim Centenário",         lat:-10.88450, lon:-37.07580 },
+  { name: "Jardins",                   lat:-10.90740, lon:-37.07480 },
+  { name: "José Conrado de Araújo",    lat:-10.90000, lon:-37.08000 },
+  { name: "Lamarão",                   lat:-10.92000, lon:-37.09500 },
+  { name: "Luzia",                     lat:-10.94430, lon:-37.07380 },
+  { name: "Marivan",                   lat:-10.94000, lon:-37.08500 },
+  { name: "Matapoã",                   lat:-10.92000, lon:-37.09900 },
+  { name: "Mosqueiro",                 lat:-10.95500, lon:-37.10500 },
+  { name: "Novo Paraíso",              lat:-10.90000, lon:-37.07500 },
+  { name: "Olaria",                    lat:-10.92700, lon:-37.09500 },
+  { name: "Palestina",                 lat:-10.91500, lon:-37.08500 },
+  { name: "Pereira Lobo",              lat:-10.91100, lon:-37.06700 },
+  { name: "Ponto Novo",                lat:-10.92700, lon:-37.08200 },
+  { name: "Porto Dantas",              lat:-10.88900, lon:-37.06000 },
+  { name: "Robalo",                    lat:-10.91000, lon:-37.08000 },
+  { name: "Salgado Filho",             lat:-10.92750, lon:-37.07050 },
+  { name: "Santa Maria",               lat:-10.92000, lon:-37.05000 },
+  { name: "Santo Antônio",             lat:-10.91000, lon:-37.07000 },
+  { name: "Santos Dumont",             lat:-10.91500, lon:-37.08500 },
+  { name: "São Conrado",               lat:-10.90000, lon:-37.08000 },
+  { name: "São José",                  lat:-10.91000, lon:-37.07000 },
+  { name: "Siqueira Campos",           lat:-10.91500, lon:-37.08500 },
+  { name: "Soledade",                  lat:-10.88240, lon:-37.05820 },
+  { name: "Suíssa",                    lat:-10.91980, lon:-37.07820 },
+  { name: "Zona de Expansão (Areia Branca)", lat:-10.94000, lon:-37.09500 },
+  { name: "Zona de Expansão (Aruana)",        lat:-10.93000, lon:-37.04000 },
+  { name: "Zona de Expansão (Mosqueiro)",     lat:-10.95000, lon:-37.11000 },
+  { name: "Zona de Expansão (Robalo)",        lat:-10.91000, lon:-37.08000 }],
+    dores:[{name:"N. Sra das Dores", lat:-10.48,lon:-37.19}],
+    itabaiana:[{name:"Itabaiana", lat:-10.685,lon:-37.425}],
+    lagarto:[{name:"Lagarto", lat:-11.032,lon:-37.476}],
+    maruim:[{name:"Maruim", lat:-10.736,lon:-37.196}],
+    propria:[{ name:"Propriá", lat:-10.2103, lon:-36.8349 },{name:"Amparo de São Francisco", lat:-10.1339, lon:-36.9300 }, { name:"Brejo Grande", lat:-10.432429, lon:-36.466638 },
+                { name:"Aquidabã",lat:-10.2828, lon:-37.0199 },{ name:"Canhoba", lat:-10.137470, lon:-36.971662 }, { name:"Cedro de São João",  lat:-10.250449, lon:-36.882313 },{ name:"Ilha das Flores", lat:-10.4420, lon:-36.5400 },
+                { name:"Japoatã", lat:-10.3456, lon:-36.7997 }, { name:"Malhada dos Bois", lat:-10.3410, lon:-36.9250 },{ name:"Muribeca", lat:-10.424184, lon:-36.956840 },
+                { name:"Neópolis", lat:-10.3156, lon:-36.5747 },{ name:"Pacatuba", lat:-10.4505, lon:-36.6470 },{ name:"Santana do São Francisco", lat:-10.2920, lon:-36.6120 },
+                { name:"São Francisco", lat:-10.3440, lon:-36.8850 },{ name:"Telha", lat:-10.2080, lon:-36.8820 }],
+    saocristovao:[{name:"São Cristóvão", lat:-11.014,lon:-37.206}]
+};
+
+function isNoite(){
+    const hora = new Date().getHours();
+    return (hora >= 18 || hora < 6);
+}
+
+function classificar(mm, weathercode, isDay){
+
+// 🌩️ Tempestade
+if([96,99].includes(weathercode)){
+    return {
+        fundo:"rgba(255,0,0,0.7)",
+        icon:"⛈️",
+        chuva:true
+    };
+}
+
+// 🌧️ Chuva forte
+if([65,82,95].includes(weathercode) || mm > 40){
+    return {
+        fundo:"rgba(255,0,0,0.6)",
+        icon:"🌧️",
+        chuva:true
+    };
+}
+
+// 🌧️ Chuva moderada
+if([63,81].includes(weathercode) || mm >= 10){
+    return {
+        fundo:"rgba(255,165,0,0.6)",
+        icon:"🌧️",
+        chuva:true
+    };
+}
+
+// 🌦️ Chuva fraca
+if([51,53,55,61,80].includes(weathercode) || mm > 0){
+    return {
+        fundo:"rgba(255,255,0,0.6)",
+        icon:"🌧️",
+        chuva:true
+    };
+}
+
+// ☁️ Nublado
+if([3,45,48].includes(weathercode)){
+    return {
+        fundo:"rgba(120,120,120,0.6)",
+        icon:"☁️",
+        chuva:false
+    };
+}
+
+// 🌤️ Parcialmente nublado
+if([1,2].includes(weathercode)){
+    return {
+        fundo:"rgba(21, 101, 192, 0.85)",
+        icon: isDay ? "🌤️" : "🌙",
+        chuva:false
+    };
+}
+
+if([0].includes(weathercode)){
+    return {
+        fundo:"rgba(21, 101, 192, 0.85)",
+        icon: isDay ? "🌤️" : "🌙",
+        chuva:false
+    };
+}
+
+// ☀️ / 🌙 Céu limpo
+return {
+    fundo:"rgba(79, 195, 247, 0.8)",
+    icon: isDay ? "☀️" : "🌙",
+    chuva:false
+};
+}
+
+function calcularRisco(weathercode) {
+
+weathercode = Number(weathercode);
+
+// 🟢 BAIXO
+if (
+    weathercode === 0 ||
+    (weathercode >= 1 && weathercode <= 3) ||
+    (weathercode >= 45 && weathercode <= 55) ||
+    weathercode === 61
+) {
+    return {
+        nivel: "BAIXO",
+        cor: "#00ff00"
+    };
+}
+
+// 🟡 MODERADO
+if (
+    weathercode === 63
+    
+) {
+    return {
+        nivel: "MODERADO",
+        cor: "#ffff00"
+    };
+}
+
+// 🔴 ALTO
+if (
+    weathercode === 65 ||
+    (weathercode >= 80 && weathercode <= 82) ||
+    weathercode >= 95
+) {
+    return {
+        nivel: "ALTO",
+        cor: "#ff0000"
+    };
+}
+
+// Padrão
+return {
+    nivel: "BAIXO",
+    cor: "#00ff00"
+};
+}
+
+// ===== VISÃO GERAL =====
+async function atualizarChuva(){
+
+mapChuva.eachLayer(l=>{
+    if(l instanceof L.Marker) mapChuva.removeLayer(l);
+});
+
+// 👇 UMA única requisição
+const chuvas = await obterChuvaMultipla(municipios);
+
+municipios.forEach((c, index) => {
+
+    const mm = chuvas[index].mm;
+    const code = chuvas[index].code;
+    const isDay = chuvas[index].isDay;
+
+    const d = classificar(mm, code, isDay);
+
+    let div = L.divIcon({
+        className:"weather-marker",
+        html:`<div class="weather-circle ${d.chuva?'pulse':''}" 
+              style="background-color:${d.fundo}">
+              ${d.icon}
+              </div>`,
+        iconSize:[40,40]
+    });
+
+    L.marker([c.lat,c.lon],{icon:div})
+        .addTo(mapChuva);
+});
+}
+
+// ===== RADAR =====
+let radarFrames = [], radarTimestamps = [], radarIndex = 0, radarLayer = null, radarTimer = null;
+async function carregarRadar(){
+    try {
+        const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
+
+        if(!res.ok) throw new Error("HTTP " + res.status);
+
+        const data = await res.json();
+
+        radarFrames = data.radar.past
+            .slice(-4)
+            .map(f => `https://tilecache.rainviewer.com${f.path}/256/{z}/{x}/{y}/2/1_1.png`);
+
+        radarTimestamps = data.radar.past
+            .slice(-4)
+            .map(f => f.time);
+
+        iniciarLoopRadar();
+
+    } catch(e) {
+        console.warn("⚠️ Radar indisponível, tentando novamente em 30s:", e.message);
+        setTimeout(carregarRadar, 30000); // tenta novamente em 30 segundos
+    }
+}
+function iniciarLoopRadar(){
+    if(radarTimer) clearInterval(radarTimer);
+    radarTimer = setInterval(()=>{
+        if(!radarFrames.length) return;
+        if(radarLayer) mapRadar.removeLayer(radarLayer);
+        radarLayer = L.tileLayer(radarFrames[radarIndex],{
+            opacity: 0.65,
+            zIndex: 100,
+            tileSize: 256,
+            minZoom: 0,
+            maxZoom: 15,
+            minNativeZoom: 0,
+            maxNativeZoom: 6
+        }).addTo(mapRadar);
+        let dataFrame = new Date(radarTimestamps[radarIndex] * 1000);
+        radarIndex = (radarIndex + 1) % radarFrames.length;
+    }, 2000);
+}
+carregarRadar();
+
+// ===== RISCO =====
+function atualizarRisco(){
+    mapRisco.eachLayer(l=>{ if(l instanceof L.Circle) mapRisco.removeLayer(l); });
+    for(let c of municipios){
+        let mm=Math.random()*50;
+        let cor=mm>40?"#ff0000":mm>=10?"#ffaa00":"#00ff88";
+        L.circle([c.lat,c.lon],{radius:18000, color:cor, fillColor:cor, fillOpacity:0.35}).addTo(mapRisco);
+    }
+}
+atualizarRisco();
+
+// ===== REGIÕES =====
+let regiaoAtual = null;
+let marcadoresRegioes = [];
+
+function toggleDropdown(e){
+    e.stopPropagation();
+    const menu=document.getElementById("menuDropdown");
+    menu.style.display = menu.style.display==="block"?"none":"block";
+}
+document.addEventListener("click",()=> document.getElementById("menuDropdown").style.display="none");
+
+function selecionarRegiao(nome){
+
+if(regiaoAtual === nome){
+    abrirAba("regioes", document.getElementById("btnRegioes"));
+    return; // evita nova requisição se for a mesma
+}
+
+regiaoAtual = nome;
+abrirAba("regioes", document.getElementById("btnRegioes"));
+atualizarRegioes();
+}
+
+
+async function atualizarRegioes(){
+
+marcadoresRegioes.forEach(m=>mapRegioes.removeLayer(m));
+marcadoresRegioes=[];
+
+if(!regiaoAtual) return;
+
+const pontos = regioes[regiaoAtual];
+
+// 👇 UMA única requisição
+const chuvas = await obterChuvaMultipla(pontos);
+
+pontos.forEach((c, index)=>{
+
+    const mm = chuvas[index].mm;
+    const code = chuvas[index].code;
+    const isDay = chuvas[index].isDay;
+
+    const d = classificar(mm, code, isDay);
+
+    let div=L.divIcon({
+        className:"weather-marker",
+        html:`<div class="weather-circle ${d.chuva?'pulse':''}" 
+              style="background-color:${d.fundo}">
+              ${d.icon}
+              </div>`,
+        iconSize:[52,52]
+    });
+
+    let marker=L.marker([c.lat,c.lon],{icon:div})
+        .addTo(mapRegioes); 
+
+    marcadoresRegioes.push(marker);
+});
+
+if(marcadoresRegioes.length > 0){
+    let group=new L.featureGroup(marcadoresRegioes);
+    mapRegioes.fitBounds(group.getBounds(),{padding:[120,120]});
+}
+}
+
+async function obterPrevisaoMultipla(cidades){
+
+    try{
+
+        const lats = cidades.map(c => c.lat).join(",");
+        const lons = cidades.map(c => c.lon).join(",");
+
+        const params = new URLSearchParams({
+            latitude: lats,
+            longitude: lons,
+            daily: "weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum",
+            timezone: "America/Sao_Paulo"
+        });
+
+        const url = "https://api.open-meteo.com/v1/forecast?" + params.toString();
+
+        const response = await fetch(url);
+
+        if(!response.ok){
+            throw new Error("Erro HTTP: " + response.status);
+        }
+
+        const data = await response.json();
+
+        // quando múltiplas cidades → retorna array
+        if(Array.isArray(data)){
+            return data.map(d => d.daily);
+        }
+
+        // fallback cidade única
+        return [data.daily];
+
+    }catch(e){
+        console.error("Erro previsão múltipla:", e);
+        return cidades.map(()=>null);
+    }
+}
+const cidadesPrevisao = [
+    { name:"Aracaju", lat:-10.9095, lon:-37.0748 },
+    { name:"Itabaiana", lat:-10.7000, lon:-37.4300 },
+    { name:"Lagarto", lat:-10.9214, lon:-37.6642 },
+    { name:"Nossa Senhora da Glória", lat:-10.2169, lon:-37.4222 },
+    { name:"São Cristóvão", lat:-11.0090, lon:-37.2047 },
+    { name:"Propriá", lat:-10.2103, lon:-36.8349 },
+    { name:"Maruim",                 lat:-10.7388, lon:-37.0822 },
+    { name:"Nossa Senhora do Socorro", lat:-10.8532, lon:-37.1270 },
+    { name:"Barra dos Coqueiros",    lat:-10.9089, lon:-37.0386 },
+    { name:"Pirambu",                lat:-10.7407, lon:-36.8589 },
+    { name:"Canindé de São Francisco", lat:-9.6600, lon:-37.7894 },
+    { name:"Nossa Senhora das Dores", lat:-10.491296, lon:-37.194538 },
+    { name:"Malhador",               lat:-10.6578, lon:-37.3061 },
+    { name:"Pinhão",                 lat:-10.5670, lon:-37.7240 },
+    { name:"Simão Dias",             lat:-10.7378, lon:-37.8068 },
+    { name:"Aquidabã",                 lat:-10.2828, lon:-37.0199 }
+    
+];
+
+function iconePrevisao(code){
+
+if([96,99].includes(code)) return "⛈️";
+if([65,82,95].includes(code)) return "🌧️";
+if([63,81].includes(code)) return "🌧️";
+if([51,53,55,61,80].includes(code)) return "🌧️";
+if([3,45,48].includes(code)) return "☁️";
+if([1,2].includes(code)) return "🌤️";
+return "☀️";
+}
+
+async function atualizarPrevisao(){
+
+    const painel = document.getElementById("painelPrevisao");
+    painel.innerHTML = "";
+
+    const previsoes = await obterPrevisaoMultipla(cidadesPrevisao);
+
+    cidadesPrevisao.forEach((cidade, index)=>{
+
+        const dados = previsoes[index];
+        if(!dados) return;
+
+        const cardCidade = document.createElement("div");
+        cardCidade.className = "card-cidade";
+
+        const titulo = document.createElement("h2");
+        titulo.textContent = cidade.name;
+        cardCidade.appendChild(titulo);
+
+        const linha = document.createElement("div");
+        linha.className = "linha-dias";
+
+        for(let i=0;i<5;i++){
+
+            const dataISO = dados.time[i] + "T12:00:00";
+            const dataObj = new Date(dataISO);
+            const hoje = i === 0;
+
+            const diaSemana = dataObj.toLocaleDateString("pt-BR",{weekday:"short"});
+
+            const max = dados.temperature_2m_max[i];
+            const min = dados.temperature_2m_min[i];
+            const chuva = dados.precipitation_sum[i];
+            const code = dados.weathercode[i];
+
+            const cardDia = document.createElement("div");
+            cardDia.className = "card-dia";
+            if(hoje) cardDia.classList.add("hoje");
+
+            cardDia.innerHTML = `
+                <div>${diaSemana}</div>
+                <div style="font-size:22px">${iconePrevisao(code)}</div>
+                <div class="temp-max">${max}°</div>
+                <div class="temp-min">${min}°</div>
+                <div>🌧️ ${chuva}mm</div>
+            `;
+
+            linha.appendChild(cardDia);
+        }
+
+        cardCidade.appendChild(linha);
+        painel.appendChild(cardCidade);
+    });
+}
+
+function desenharGrafico(id, min, max){
+
+const canvas = document.getElementById(id);
+if(!canvas) return;
+
+const ctx = canvas.getContext("2d");
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+const padding = 10;
+const largura = canvas.width - padding*2;
+const altura = canvas.height - padding*2;
+
+const maior = Math.max(...max);
+const menor = Math.min(...min);
+const escala = altura / (maior - menor);
+
+ctx.strokeStyle="#ff4d4d";
+ctx.beginPath();
+
+max.forEach((t,i)=>{
+    const x = padding + (i*(largura/4));
+    const y = canvas.height - padding - ((t-menor)*escala);
+    if(i===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+});
+ctx.stroke();
+
+ctx.strokeStyle="#00bfff";
+ctx.beginPath();
+
+min.forEach((t,i)=>{
+    const x = padding + (i*(largura/4));
+    const y = canvas.height - padding - ((t-menor)*escala);
+    if(i===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+});
+ctx.stroke();
+}
+// ===== ATUALIZAÇÃO GLOBAL 5 MIN =====
+
+const INTERVALO_ATUALIZACAO = 10 * 60; // 10 minutos
+let tempoRestante = INTERVALO_ATUALIZACAO;
+
+let atualizando = false;
+
+async function atualizarRisco(){
+
+mapRisco.eachLayer(l=>{
+    if(l instanceof L.Circle || l instanceof L.Marker)
+        mapRisco.removeLayer(l);
+});
+
+const dados = await obterChuvaMultipla(municipios);
+
+municipios.forEach((c,index)=>{
+
+    const weathercode = dados[index].code;
+    const risco = calcularRisco(weathercode);
+
+    // 🔻 CÍRCULO MENOR
+    L.circle([c.lat,c.lon],{
+        radius:6000,
+        color:risco.cor,
+        fillColor:risco.cor,
+        fillOpacity:0.35
+    }).addTo(mapRisco);
+
+    // ⚡ ÍCONE CENTRAL
+    const icone = L.divIcon({
+        className: "icone-risco",
+        html: "❌⚡",
+        iconSize: [24,24],
+        iconAnchor: [12,12]
+    });
+
+    L.marker([c.lat,c.lon],{
+        icon: icone
+    })
+    .addTo(mapRisco)
+    .bindTooltip(
+        `${c.name}<br>Interrupção: ${risco.nivel}`,
+        {permanent:false}
+    );
+});
+}
+
+function atualizarDataAtual(){
+
+const agora = new Date();
+
+const opcoes = {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+};
+
+const dataFormatada = agora.toLocaleDateString("pt-BR", opcoes);
+
+document.getElementById("dataAtualTexto").textContent =
+    dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
+}
+
+// Atualiza ao carregar
+atualizarDataAtual();
+
+// Atualiza automaticamente à meia-noite
+setInterval(atualizarDataAtual, 60 * 60 * 1000);
+
+async function atualizarTudo(){
+
+if(atualizando) return;
+atualizando = true;
+
+console.log("🔄 Atualizando dados...");
+
+try{
+
+    const abaAtiva = document.querySelector(".map-container.active").id;
+
+    // 🌧️ Atualiza chuva apenas se estiver na visão geral
+    if(abaAtiva === "chuva"){
+        await atualizarChuva();
+    }
+
+    // 🗺️ Atualiza regiões apenas se a aba estiver aberta
+    if(abaAtiva === "regioes" && regiaoAtual){
+        await atualizarRegioes();
+    }
+
+    // ⚡ Risco só atualiza se estiver visível
+    if(abaAtiva === "risco"){
+        atualizarRisco();
+    }
+
+    if(abaAtiva === "previsao"){
+        await atualizarPrevisao();
+    }
+
+}
+catch(e){
+    console.error("Erro na atualização global:", e);
+}
+
+tempoRestante = INTERVALO_ATUALIZACAO;
+atualizando = false;
+
+console.log("✅ Atualização concluída");
+}
+
+// Atualização fixa a cada 5 minutos independente do contador
+setInterval(atualizarTudo, INTERVALO_ATUALIZACAO * 1000);
+
+// Contador visual
+setInterval(() => {
+
+    tempoRestante--;
+
+    let minutos = Math.floor(tempoRestante / 60);
+    let segundos = tempoRestante % 60;
+
+    document.getElementById("tempoRestante").textContent =
+        `${String(minutos).padStart(2,'0')}:${String(segundos).padStart(2,'0')}`;
+
+    if(tempoRestante <= 0){
+        atualizarTudo();
+    }
+
+}, 1000);
+
+
+// Primeira carga
+atualizarTudo();
+document.getElementById("tituloChuva").style.display = "block";
+
+</script>
+
+</body>
+</html>
