@@ -1097,7 +1097,7 @@ if([96,99].includes(weathercode)){
 }
 
 // 🌧️ Chuva forte
-if([65,82,95].includes(weathercode) || mm > 40){
+if([65,82,95].includes(weathercode) || mm >= 10){
     return {
         fundo:"rgba(255,0,0,0.6)",
         icon:"🌧️",
@@ -1106,7 +1106,7 @@ if([65,82,95].includes(weathercode) || mm > 40){
 }
 
 // 🌧️ Chuva moderada
-if([63,81].includes(weathercode) || mm >= 10){
+if([63,81].includes(weathercode) || mm >= 2.5){
     return {
         fundo:"rgba(255,165,0,0.6)",
         icon:"🌧️",
