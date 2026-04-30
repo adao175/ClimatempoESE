@@ -402,10 +402,216 @@ body.dark .creditos {
     opacity: 0.8;
 }
 
+/* ===== ALERTA DE INTERVALO ===== */
+#alertaIntervalo {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.82);
+    align-items: center;
+    justify-content: center;
+    animation: fadeInOverlay 0.4s ease;
+}
+
+#alertaIntervalo.visivel {
+    display: flex;
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.alerta-card {
+    background: linear-gradient(135deg, #0a1628, #0f2a1e);
+    border: 3px solid #00ff88;
+    border-radius: 24px;
+    padding: 50px 60px;
+    text-align: center;
+    max-width: 700px;
+    width: 90%;
+    box-shadow:
+        0 0 60px rgba(0, 255, 136, 0.5),
+        0 0 120px rgba(0, 255, 136, 0.2),
+        inset 0 0 40px rgba(0, 255, 136, 0.05);
+    animation: pulsarCard 1.5s infinite ease-in-out;
+    position: relative;
+}
+
+@keyframes pulsarCard {
+    0%, 100% { box-shadow: 0 0 60px rgba(0,255,136,0.5), 0 0 120px rgba(0,255,136,0.2); }
+    50%       { box-shadow: 0 0 90px rgba(0,255,136,0.9), 0 0 180px rgba(0,255,136,0.4); }
+}
+
+.alerta-icone {
+    font-size: 72px;
+    margin-bottom: 16px;
+    animation: balancaIcone 0.6s infinite alternate;
+}
+
+@keyframes balancaIcone {
+    from { transform: rotate(-8deg) scale(1);   }
+    to   { transform: rotate( 8deg) scale(1.1); }
+}
+
+.alerta-titulo {
+    font-size: 18px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #00ff88;
+    opacity: 0.8;
+    margin-bottom: 8px;
+}
+
+.alerta-polo {
+    font-size: 52px;
+    font-weight: 900;
+    color: #00ff88;
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.9);
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+}
+
+.alerta-msg {
+    font-size: 22px;
+    color: #ffffff;
+    line-height: 1.5;
+    margin-bottom: 30px;
+}
+
+.alerta-horario {
+    font-size: 16px;
+    color: #00f0ff;
+    letter-spacing: 1px;
+    margin-bottom: 34px;
+    opacity: 0.9;
+}
+
+.alerta-fechar {
+    padding: 12px 36px;
+    background: #00ff88;
+    color: #000;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: 0.2s;
+}
+
+.alerta-fechar:hover {
+    background: #00ffaa;
+    transform: scale(1.05);
+}
+
+.alerta-barra-progresso {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 5px;
+    background: #00ff88;
+    border-radius: 0 0 24px 24px;
+    width: 100%;
+    transform-origin: left;
+    animation: encolherBarra var(--duracao, 15s) linear forwards;
+}
+
+@keyframes encolherBarra {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}
+
+
+/* ===== BARRA RADAR AO VIVO ===== */
+#barraRadarVivo {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 38px;
+    background: linear-gradient(90deg, rgba(0,0,0,0.92) 0%, rgba(0,20,40,0.95) 50%, rgba(0,0,0,0.92) 100%);
+    border-top: 1px solid rgba(0,240,255,0.4);
+    box-shadow: 0 -4px 20px rgba(0,240,255,0.15);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #fff;
+}
+
+#barraRadarVivo.visivel {
+    display: flex;
+}
+
+.radar-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ff3b3b;
+    box-shadow: 0 0 8px #ff3b3b, 0 0 16px rgba(255,59,59,0.5);
+    animation: pulsarDot 1.2s infinite ease-in-out;
+    flex-shrink: 0;
+}
+
+@keyframes pulsarDot {
+    0%, 100% { opacity: 1;   transform: scale(1);    box-shadow: 0 0 8px #ff3b3b; }
+    50%       { opacity: 0.6; transform: scale(1.35); box-shadow: 0 0 18px #ff3b3b; }
+}
+
+.radar-vivo-texto {
+    color: #00f0ff;
+    text-shadow: 0 0 10px rgba(0,240,255,0.8);
+    font-size: 13px;
+    letter-spacing: 2.5px;
+}
+
+.radar-separador {
+    color: rgba(0,240,255,0.35);
+    font-weight: 300;
+}
+
+.radar-fonte {
+    color: rgba(255,255,255,0.55);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1px;
+}
+
+.radar-frame-info {
+    color: rgba(255,255,255,0.75);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    min-width: 130px;
+    text-align: left;
+}
 </style>
 </head>
 
 <body class="dark">
+
+<!-- ===== OVERLAY DE ALERTA DE INTERVALO ===== -->
+<div id="alertaIntervalo">
+    <div class="alerta-card">
+        <div class="alerta-icone">☕</div>
+        <div class="alerta-titulo">⏰ Horário de Intervalo</div>
+        <div class="alerta-polo" id="alertaPolo">SCT</div>
+        <div class="alerta-msg" id="alertaMensagem">
+            Operador do polo <strong id="alertaPoloNome">SCT</strong>,<br>
+            está na hora do seu intervalo.<br>
+            Por favor, passe o turno imediatamente!
+        </div>
+        <div class="alerta-horario" id="alertaHorario">🕐 11h40 às 12h40</div>
+        <button class="alerta-fechar" onclick="fecharAlerta()">✔ Ciente</button>
+        <div class="alerta-barra-progresso" id="alertaBarra"></div>
+    </div>
+</div>
 
     <div class="topbar">
 
@@ -470,6 +676,16 @@ body.dark .creditos {
     
 <div id="chuva" class="map-container active"><div id="mapChuva"></div></div>
 <div id="radar" class="map-container"><div id="mapRadar"></div></div>
+
+<!-- BARRA RADAR AO VIVO -->
+<div id="barraRadarVivo">
+    <span class="radar-dot"></span>
+    <span class="radar-vivo-texto">RADAR AO VIVO</span>
+    <span class="radar-separador">|</span>
+    <span class="radar-fonte">Fonte: RainViewer</span>
+    <span class="radar-separador">|</span>
+    <span class="radar-frame-info" id="radarFrameInfo">⏱ Carregando...</span>
+</div>
 <div id="risco" class="map-container"><div id="mapRisco"></div></div>
 <div id="regioes" class="map-container"><div id="mapRegioes"></div></div>
 <div id="previsao" class="map-container">
@@ -670,6 +886,14 @@ function abrirAba(id,btn){
     const tituloAtual = document.getElementById(mapaTitulos[id]);
     if(tituloAtual){
         tituloAtual.style.display = "block";
+    }
+
+    // ===== BARRA RADAR AO VIVO =====
+    const barra = document.getElementById("barraRadarVivo");
+    if(id === "radar"){
+        barra.classList.add("visivel");
+    } else {
+        barra.classList.remove("visivel");
     }
 
     // ajuste do Leaflet
@@ -1039,21 +1263,49 @@ async function carregarRadar(){
 }
 function iniciarLoopRadar(){
     if(radarTimer) clearInterval(radarTimer);
-    radarTimer = setInterval(()=>{
-        if(!radarFrames.length) return;
-        if(radarLayer) mapRadar.removeLayer(radarLayer);
-        radarLayer = L.tileLayer(radarFrames[radarIndex],{
-            opacity: 0.65,
+
+    // Pré-carrega todos os frames como layers com opacidade 0
+    const radarLayers = radarFrames.map(url =>
+        L.tileLayer(url, {
+            opacity: 0,
             zIndex: 100,
             tileSize: 256,
             minZoom: 0,
-            maxZoom: 15,
+            maxZoom: 18,
             minNativeZoom: 0,
-            maxNativeZoom: 6
-        }).addTo(mapRadar);
-        let dataFrame = new Date(radarTimestamps[radarIndex] * 1000);
+            maxNativeZoom: 6,
+        }).addTo(mapRadar)
+    );
+
+    // Exibe o primeiro frame imediatamente
+    radarLayers[0].setOpacity(0.65);
+    radarLayer = radarLayers[0];
+    radarIndex = 1; // próximo frame começa no índice 1
+
+    radarTimer = setInterval(()=>{
+        if(!radarFrames.length) return;
+
+        // Esconde todos os layers
+        radarLayers.forEach(l => l.setOpacity(0));
+
+        // Exibe o frame atual
+        radarLayers[radarIndex].setOpacity(0.65);
+        radarLayer = radarLayers[radarIndex];
+
+        // Atualiza info do frame na barra
+        const ts = radarTimestamps[radarIndex];
+        if(ts){
+            const d = new Date(ts * 1000);
+            const hh = String(d.getHours()).padStart(2,'0');
+            const mm = String(d.getMinutes()).padStart(2,'0');
+            const frameNum = radarIndex + 1;
+            const total = radarFrames.length;
+            document.getElementById("radarFrameInfo").textContent =
+                `⏱ Frame ${frameNum}/${total} — ${hh}:${mm}`;
+        }
+
         radarIndex = (radarIndex + 1) % radarFrames.length;
-    }, 2000);
+    }, 1500);
 }
 carregarRadar();
 
@@ -1431,6 +1683,212 @@ setInterval(() => {
 // Primeira carga
 atualizarTudo();
 document.getElementById("tituloChuva").style.display = "block";
+
+// ===== ROTAÇÃO AUTOMÁTICA DE ABAS (10 MIN) =====
+
+const rotacaoAbas = [
+    {
+        id: 'chuva',
+        acao: () => {
+            filtroRegiao = null;
+            const btn = document.querySelectorAll('.tabs button')[0];
+            abrirAba('chuva', btn);
+            atualizarChuva();
+        }
+    },
+    {
+        id: 'radar',
+        acao: () => {
+            const btn = document.querySelectorAll('.tabs button')[2];
+            abrirAba('radar', btn);
+        }
+    },
+    {
+        id: 'risco',
+        acao: () => {
+            const btn = document.querySelectorAll('.tabs button')[3];
+            abrirAba('risco', btn);
+            atualizarRisco();
+        }
+    },
+    {
+        id: 'previsao',
+        acao: () => {
+            const btn = document.querySelectorAll('.tabs button')[4];
+            abrirAba('previsao', btn);
+            atualizarPrevisao();
+        }
+    }
+];
+
+let indiceAbaAtual = 0;
+
+function proximaAba() {
+    indiceAbaAtual = (indiceAbaAtual + 1) % rotacaoAbas.length;
+    rotacaoAbas[indiceAbaAtual].acao();
+}
+
+const INTERVALO_ROTACAO = 9 * 60 * 1000 + 50 * 1000; // 9 minutos e 50 segundos em ms
+setInterval(proximaAba, INTERVALO_ROTACAO);
+// ===== SISTEMA DE ALERTAS DE INTERVALO =====
+
+const horariosIntervalo = [
+    // AJU I
+    { polo: "ARACAJU I",  inicio: "10:00", fim: "11:00" },
+    { polo: "ARACAJU I",  inicio: "18:00", fim: "19:00" },
+    // AJU II
+    { polo: "ARACAJU II", inicio: "11:00", fim: "12:00" },
+    { polo: "ARACAJU II", inicio: "19:00", fim: "20:00" },
+    // ITB
+    { polo: "ITABAIANA",    inicio: "09:40", fim: "10:40" },
+    { polo: "ITABAIANA",    inicio: "17:40", fim: "18:40" },
+    // LGT
+    { polo: "LAGARTO",    inicio: "10:40", fim: "11:40" },
+    { polo: "LAGARTO",    inicio: "18:40", fim: "19:40" },
+    // NSD
+    { polo: "GLÓRIA",    inicio: "10:40", fim: "11:40" },
+    { polo: "GLÓRIA",    inicio: "19:40", fim: "20:40" },
+    // PPR
+    { polo: "PROPRIÁ",    inicio: "09:40", fim: "10:40" },
+    { polo: "PROPRIÁ",    inicio: "17:40", fim: "18:40" },
+    // MRI
+    { polo: "MARUIM",    inicio: "11:40", fim: "12:40" },
+    { polo: "MARUIM",    inicio: "19:40", fim: "20:40" },
+    // SCT
+    { polo: "SÃO CRISTÓVÃO",    inicio: "11:40", fim: "12:40" },
+    { polo: "SÃO CRISTÓVÃO",    inicio: "19:40", fim: "20:40" },
+];
+
+const ESPERA_APOS_VOZ_SEG = 4; // segundos de barra após a 2ª fala terminar
+const alertasDisparados = new Set(); // evita repetição no mesmo minuto
+let timerFecharAlerta = null;
+
+function horaParaMinutos(hora) {
+    const [h, m] = hora.split(":").map(Number);
+    return h * 60 + m;
+}
+
+function dispararAlerta(polo, inicio, fim, chave) {
+    if (alertasDisparados.has(chave)) return;
+    alertasDisparados.add(chave);
+
+    // Singular ou plural dependendo da quantidade de polos
+    const multiplos = polo.includes(" e ");
+    const prefixo   = multiplos ? "Operadores dos polos" : "Operador do polo";
+    const verbo     = multiplos ? "passem" : "passe";
+
+    // Preenche o overlay
+    document.getElementById("alertaPolo").textContent = polo;
+    document.getElementById("alertaMensagem").innerHTML =
+        `${prefixo} <strong id="alertaPoloNome">${polo}</strong>,<br>
+         está na hora do intervalo.<br>
+         Por favor, ${verbo} o turno imediatamente!`;
+    document.getElementById("alertaHorario").textContent = `🕐 ${inicio} às ${fim}`;
+
+    // Oculta a barra até a voz terminar
+    const barra = document.getElementById("alertaBarra");
+    barra.style.animation = "none";
+    barra.style.opacity   = "0";
+    barra.offsetHeight; // reflow
+
+    // Mostra overlay
+    document.getElementById("alertaIntervalo").classList.add("visivel");
+
+    // Voz — fecha SOMENTE após a 2ª repetição terminar
+    falarAlerta(polo, inicio, fim, () => {
+        barra.style.setProperty("--duracao", ESPERA_APOS_VOZ_SEG + "s");
+        barra.style.opacity   = "1";
+        barra.style.animation = "";
+        if (timerFecharAlerta) clearTimeout(timerFecharAlerta);
+        timerFecharAlerta = setTimeout(fecharAlerta, ESPERA_APOS_VOZ_SEG * 1000);
+    });
+}
+
+function fecharAlerta() {
+    document.getElementById("alertaIntervalo").classList.remove("visivel");
+    if (timerFecharAlerta) clearTimeout(timerFecharAlerta);
+    window.speechSynthesis.cancel();
+}
+
+function falarAlerta(polo, inicio, fim, onComplete) {
+    if (!window.speechSynthesis) {
+        if (onComplete) onComplete();
+        return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const multiplos   = polo.includes(" e ");
+    const prefixoVoz  = multiplos ? `operadores dos polos ${polo}` : `operador do polo ${polo}`;
+    const verboVoz    = multiplos ? "passem" : "passe";
+    const texto = `Atenção! ${prefixoVoz.charAt(0).toUpperCase() + prefixoVoz.slice(1)}, está na hora do intervalo, das ${inicio} às ${fim}. Por favor, ${verboVoz} o turno imediatamente!`;
+
+    const utterance = new SpeechSynthesisUtterance(texto);
+    utterance.lang   = "pt-BR";
+    utterance.rate   = 0.92;
+    utterance.pitch  = 1.05;
+    utterance.volume = 1;
+
+    // Tenta usar voz em português se disponível
+    const vozes = window.speechSynthesis.getVoices();
+    const vozPT = vozes.find(v => v.lang === "pt-BR") || vozes.find(v => v.lang.startsWith("pt"));
+    if (vozPT) utterance.voice = vozPT;
+
+    // Repete 2 vezes e só chama onComplete ao final da 2ª
+    let repeticoes = 0;
+    utterance.onend = () => {
+        repeticoes++;
+        if (repeticoes < 2) {
+            setTimeout(() => window.speechSynthesis.speak(utterance), 800);
+        } else {
+            if (onComplete) onComplete();
+        }
+    };
+
+    window.speechSynthesis.speak(utterance);
+}
+
+// Verifica a cada 30 segundos
+function verificarHorariosIntervalo() {
+    const agora    = new Date();
+    const minAtual = agora.getHours() * 60 + agora.getMinutes();
+
+    // Limpa alertas disparados quando o minuto muda (para não travar para sempre)
+    const chaveMinuto = `min-${minAtual}`;
+    if (!alertasDisparados.has(chaveMinuto)) {
+        alertasDisparados.add(chaveMinuto);
+    }
+
+    // Agrupa todos os polos que iniciam no mesmo horário
+    const grupos = {};
+    horariosIntervalo.forEach(h => {
+        const minInicio = horaParaMinutos(h.inicio);
+        if (minAtual === minInicio) {
+            const chaveHorario = `${h.inicio}-${h.fim}`;
+            if (!grupos[chaveHorario]) {
+                grupos[chaveHorario] = { polos: [], inicio: h.inicio, fim: h.fim };
+            }
+            grupos[chaveHorario].polos.push(h.polo);
+        }
+    });
+
+    // Dispara um único alerta por grupo (polos concatenados com " e ")
+    Object.values(grupos).forEach(grupo => {
+        const poloConcatenado = grupo.polos.join(" e ");
+        const chave = `${poloConcatenado}-${grupo.inicio}`;
+        dispararAlerta(poloConcatenado, grupo.inicio, grupo.fim, chave);
+    });
+}
+
+// Limpa set de disparados a cada hora (para alertas noturnos repetirem no dia seguinte)
+setInterval(() => {
+    const agora = new Date();
+    if (agora.getMinutes() === 0) alertasDisparados.clear();
+}, 60 * 1000);
+
+setInterval(verificarHorariosIntervalo, 30 * 1000);
+verificarHorariosIntervalo(); // roda imediatamente ao carregar
+
 
 </script>
 
