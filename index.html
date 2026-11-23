@@ -18,6 +18,11 @@ html, body {
     transition:0.3s;
 }
 
+body{
+    display:flex;
+    flex-direction:column;
+}
+
 /* ===== TEMAS ===== */
 body.dark {
     background:#0b1220;
@@ -41,6 +46,8 @@ body.light {
 .tabs {
     display:flex;
 }
+
+.topbar,.titulo-aba{ flex:0 0 auto; }
 
 .tabs button {
     padding:10px 18px;
@@ -67,7 +74,8 @@ body.light {
 .map-container {
     display:none;
     width:100%;
-    height:100vh;
+    flex:1 1 auto;
+    min-height:0;
     overflow:hidden;
 }
 
@@ -172,6 +180,7 @@ body.light {
     width:100% !important;
     max-width:100% !important;
     overflow:hidden !important;
+    background:#0b1220;
 }
 /* ===== LEGENDA ===== */
 .legenda {
@@ -227,7 +236,7 @@ canvas{
 
 .painel-previsao{
     width:100%;
-    height:calc(100vh - 140px); /* ajusta para caber abaixo topbar + título */
+    height:100%;
     padding:15px;
 
     display:grid;
@@ -402,136 +411,14 @@ body.dark .creditos {
     opacity: 0.8;
 }
 
-/* ===== ALERTA DE INTERVALO ===== */
-#alertaIntervalo {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 99999;
-    background: rgba(0, 0, 0, 0.82);
-    align-items: center;
-    justify-content: center;
-    animation: fadeInOverlay 0.4s ease;
-}
-
-#alertaIntervalo.visivel {
-    display: flex;
-}
-
-@keyframes fadeInOverlay {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-
-.alerta-card {
-    background: linear-gradient(135deg, #0a1628, #0f2a1e);
-    border: 3px solid #00ff88;
-    border-radius: 24px;
-    padding: 50px 60px;
-    text-align: center;
-    max-width: 700px;
-    width: 90%;
-    box-shadow:
-        0 0 60px rgba(0, 255, 136, 0.5),
-        0 0 120px rgba(0, 255, 136, 0.2),
-        inset 0 0 40px rgba(0, 255, 136, 0.05);
-    animation: pulsarCard 1.5s infinite ease-in-out;
-    position: relative;
-}
-
-@keyframes pulsarCard {
-    0%, 100% { box-shadow: 0 0 60px rgba(0,255,136,0.5), 0 0 120px rgba(0,255,136,0.2); }
-    50%       { box-shadow: 0 0 90px rgba(0,255,136,0.9), 0 0 180px rgba(0,255,136,0.4); }
-}
-
-.alerta-icone {
-    font-size: 72px;
-    margin-bottom: 16px;
-    animation: balancaIcone 0.6s infinite alternate;
-}
-
-@keyframes balancaIcone {
-    from { transform: rotate(-8deg) scale(1);   }
-    to   { transform: rotate( 8deg) scale(1.1); }
-}
-
-.alerta-titulo {
-    font-size: 18px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: #00ff88;
-    opacity: 0.8;
-    margin-bottom: 8px;
-}
-
-.alerta-polo {
-    font-size: 52px;
-    font-weight: 900;
-    color: #00ff88;
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.9);
-    letter-spacing: 3px;
-    margin-bottom: 20px;
-}
-
-.alerta-msg {
-    font-size: 22px;
-    color: #ffffff;
-    line-height: 1.5;
-    margin-bottom: 30px;
-}
-
-.alerta-horario {
-    font-size: 16px;
-    color: #00f0ff;
-    letter-spacing: 1px;
-    margin-bottom: 34px;
-    opacity: 0.9;
-}
-
-.alerta-fechar {
-    padding: 12px 36px;
-    background: #00ff88;
-    color: #000;
-    border: none;
-    border-radius: 50px;
-    font-size: 16px;
-    font-weight: 800;
-    cursor: pointer;
-    letter-spacing: 1px;
-    transition: 0.2s;
-}
-
-.alerta-fechar:hover {
-    background: #00ffaa;
-    transform: scale(1.05);
-}
-
-.alerta-barra-progresso {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 5px;
-    background: #00ff88;
-    border-radius: 0 0 24px 24px;
-    width: 100%;
-    transform-origin: left;
-    animation: encolherBarra var(--duracao, 15s) linear forwards;
-}
-
-@keyframes encolherBarra {
-    from { transform: scaleX(1); }
-    to   { transform: scaleX(0); }
-}
-
-
 /* ===== BARRA RADAR AO VIVO ===== */
 #barraRadarVivo {
     display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
+    position: relative;          /* ocupa espaço próprio: não cobre mais o mapa/zoom */
+    flex: 0 0 auto;
     width: 100%;
-    height: 38px;
+    height: 46px;
+    padding: 0 16px;
     background: linear-gradient(90deg, rgba(0,0,0,0.92) 0%, rgba(0,20,40,0.95) 50%, rgba(0,0,0,0.92) 100%);
     border-top: 1px solid rgba(0,240,255,0.4);
     box-shadow: 0 -4px 20px rgba(0,240,255,0.15);
@@ -591,27 +478,108 @@ body.dark .creditos {
     min-width: 130px;
     text-align: left;
 }
+
+/* ===== RADAR: CAMADAS ===== */
+#radar { position:relative; }
+
+.radar-frame {
+    transition: opacity 0.45s ease-in-out;   /* transição suave entre frames */
+}
+
+/* Nuvens IR: preto vira transparente (screen) e só as nuvens brancas aparecem sobre o satélite */
+.leaflet-nuvens-pane.sem-cors {
+    mix-blend-mode: screen;
+    filter: grayscale(1) contrast(2.2) brightness(0.9);
+    pointer-events: none;
+}
+.leaflet-chuva-pane {
+    pointer-events: none;
+    filter: saturate(1.25) drop-shadow(0 0 2px rgba(0,0,0,0.6));
+}
+
+/* Painel de camadas do radar */
+.radar-painel {
+    position:absolute;
+    left:14px;
+    bottom:14px;
+    z-index:1000;
+    background:rgba(5,12,24,0.88);
+    border:1px solid rgba(0,240,255,0.5);
+    border-radius:12px;
+    box-shadow:0 0 12px rgba(0,240,255,0.35);
+    padding:10px 14px;
+    color:#fff;
+    font-size:13px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-width:210px;
+}
+.radar-painel .rp-titulo {
+    font-size:11px;
+    letter-spacing:2px;
+    color:#00f0ff;
+    font-weight:800;
+}
+.radar-painel label {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    font-weight:600;
+}
+.radar-painel input[type=range] { width:100%; accent-color:#00f0ff; }
+.radar-painel .rp-sub { font-size:11px; opacity:0.65; font-weight:500; }
+
+/* Linha do tempo do radar */
+.radar-play {
+    background:none;
+    border:1px solid rgba(0,240,255,0.6);
+    color:#00f0ff;
+    border-radius:50%;
+    width:28px; height:28px;
+    cursor:pointer;
+    font-size:12px;
+    flex-shrink:0;
+}
+.radar-play:hover { background:rgba(0,240,255,0.15); }
+
+.radar-timeline {
+    display:flex;
+    align-items:center;
+    gap:4px;
+}
+.radar-timeline button {
+    width:14px; height:8px;
+    border:none;
+    border-radius:4px;
+    background:rgba(255,255,255,0.25);
+    cursor:pointer;
+    padding:0;
+    transition:0.2s;
+}
+.radar-timeline button.ativo {
+    background:#00f0ff;
+    box-shadow:0 0 8px #00f0ff;
+    width:22px;
+}
+
+/* Legenda de intensidade (escala Universal Blue do RainViewer) */
+.radar-legenda {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.5px;
+    color:rgba(255,255,255,0.85);
+}
+.radar-legenda span { display:flex; align-items:center; gap:4px; white-space:nowrap; }
+.radar-legenda i { width:12px; height:12px; border-radius:3px; display:inline-block; }
 </style>
 </head>
 
 <body class="dark">
-
-<!-- ===== OVERLAY DE ALERTA DE INTERVALO ===== -->
-<div id="alertaIntervalo">
-    <div class="alerta-card">
-        <div class="alerta-icone">☕</div>
-        <div class="alerta-titulo">⏰ Horário de Intervalo</div>
-        <div class="alerta-polo" id="alertaPolo">SCT</div>
-        <div class="alerta-msg" id="alertaMensagem">
-            Operador do polo <strong id="alertaPoloNome">SCT</strong>,<br>
-            está na hora do seu intervalo.<br>
-            Por favor, passe o turno imediatamente!
-        </div>
-        <div class="alerta-horario" id="alertaHorario">🕐 11h40 às 12h40</div>
-        <button class="alerta-fechar" onclick="fecharAlerta()">✔ Ciente</button>
-        <div class="alerta-barra-progresso" id="alertaBarra"></div>
-    </div>
-</div>
 
     <div class="topbar">
 
@@ -675,16 +643,38 @@ body.dark .creditos {
     </div>
     
 <div id="chuva" class="map-container active"><div id="mapChuva"></div></div>
-<div id="radar" class="map-container"><div id="mapRadar"></div></div>
+<div id="radar" class="map-container">
+    <div id="mapRadar"></div>
+    <div class="radar-painel">
+        <div class="rp-titulo">CAMADAS</div>
+        <label><input type="checkbox" id="chkRadar" checked> 🌧️ Radar de chuva</label>
+        <label><input type="checkbox" id="chkNuvens" checked> ☁️ Nuvens (satélite IR)</label>
+        <label><input type="checkbox" id="chkFiltro" checked> 🧹 Filtrar falsos ecos</label>
+        <div class="rp-sub">Intensidade das nuvens</div>
+        <input type="range" id="sldNuvens" min="0" max="100" value="80">
+        <div class="rp-sub" id="nuvensInfo">GOES-East · atualiza a cada 10 min</div>
+    </div>
+</div>
 
 <!-- BARRA RADAR AO VIVO -->
 <div id="barraRadarVivo">
     <span class="radar-dot"></span>
     <span class="radar-vivo-texto">RADAR AO VIVO</span>
     <span class="radar-separador">|</span>
-    <span class="radar-fonte">Fonte: RainViewer</span>
-    <span class="radar-separador">|</span>
+    <button class="radar-play" id="btnRadarPlay" title="Pausar / continuar">❚❚</button>
+    <div class="radar-timeline" id="radarTimeline"></div>
     <span class="radar-frame-info" id="radarFrameInfo">⏱ Carregando...</span>
+    <span class="radar-separador">|</span>
+    <div class="radar-legenda">
+        <span><i style="background:#88ddee"></i>Garoa</span>
+        <span><i style="background:#0077aa"></i>Fraca</span>
+        <span><i style="background:#ffee00"></i>Moderada</span>
+        <span><i style="background:#ff4400"></i>Forte</span>
+        <span><i style="background:#c10000"></i>Muito forte</span>
+        <span><i style="background:#ff77ff"></i>Extrema</span>
+    </div>
+    <span class="radar-separador">|</span>
+    <span class="radar-fonte">Radar: RainViewer · Nuvens: NASA GIBS / GOES-East</span>
 </div>
 <div id="risco" class="map-container"><div id="mapRisco"></div></div>
 <div id="regioes" class="map-container"><div id="mapRegioes"></div></div>
@@ -771,7 +761,6 @@ body.dark .creditos {
 
 </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
 
@@ -902,12 +891,27 @@ function abrirAba(id,btn){
         mapRadar.invalidateSize();
         mapRisco.invalidateSize();
         mapRegioes.invalidateSize();
+        // deixa o estado inteiro acima da legenda
+        if(id === "chuva") enquadrarSergipe(mapChuva, 90);
+        if(id === "risco") enquadrarSergipe(mapRisco, 90);
+        if(id === "radar") enquadrarSergipe(mapRadar, 20);
     },200);
 }
 
 // ===== FUNÇÃO MAPA =====
 function criarMapa(id){
-    return L.map(id,{zoomControl:false}).setView([-10.8,-37.4],9.3);
+    const m = L.map(id,{zoomControl:true, preferCanvas:true, zoomSnap:0.1, zoomDelta:0.5}).setView([-10.6,-37.1],9);
+    m.zoomControl.setPosition("bottomright");
+    m.createPane("lbl");
+    m.getPane("lbl").style.zIndex = 370;
+    m.getPane("lbl").style.pointerEvents = "none";
+    return m;
+}
+
+// Limites de Sergipe: usado para enquadrar o estado inteiro na tela
+const LIMITES_SE = L.latLngBounds([-11.57,-38.25],[-9.51,-36.39]);
+function enquadrarSergipe(m, folgaBaixo){
+    m.fitBounds(LIMITES_SE,{ paddingTopLeft:[20,20], paddingBottomRight:[20,folgaBaixo] });
 }
 
 var mapChuva=criarMapa("mapChuva");
@@ -915,25 +919,21 @@ var mapRadar=criarMapa("mapRadar");
 var mapRisco=criarMapa("mapRisco");
 var mapRegioes=criarMapa("mapRegioes");
 
-var darkLayer='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-var lightLayer='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+// ===== BASE SATÉLITE (Esri World Imagery + nomes de cidades) =====
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
 
-L.tileLayer(darkLayer).addTo(mapChuva);
-L.tileLayer(darkLayer).addTo(mapRadar);
-L.tileLayer(darkLayer).addTo(mapRisco);
-L.tileLayer(darkLayer).addTo(mapRegioes);
-
-function atualizarBase(){
-    let url=document.body.classList.contains("dark")?darkLayer:lightLayer;
-    [mapChuva,mapRadar,mapRisco,mapRegioes].forEach(m=>{
-        m.eachLayer(layer=>{ if(layer instanceof L.TileLayer) m.removeLayer(layer); });
-        L.tileLayer(url).addTo(m);
-    });
-}
-
-document.querySelector(".toggle").addEventListener("click",()=>{
-    setTimeout(atualizarBase,100);
+[mapChuva,mapRadar,mapRisco,mapRegioes].forEach(m=>{
+    L.tileLayer(ESRI+"World_Imagery/MapServer/tile/{z}/{y}/{x}",{
+        maxZoom:19,
+        attribution:"Imagens &copy; Esri"
+    }).addTo(m);
+    L.tileLayer(ESRI+"Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{
+        maxZoom:19,
+        pane:"lbl"
+    }).addTo(m);
 });
+
+// Mapa fica sempre em satélite; o botão 🌙/☀️ muda apenas o tema da interface
 
 // ===== CONTORNO SERGIPE =====
 fetch("https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson")
@@ -943,8 +943,17 @@ fetch("https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/p
 })
 .then(data=>{
     const sergipe=data.features.find(f=>f.properties.name==="Sergipe");
+    const rings = sergipe.geometry.type==="Polygon"
+        ? [sergipe.geometry.coordinates]
+        : sergipe.geometry.coordinates;
+    const mundo = [[-90,-180],[-90,180],[90,180],[90,-180]];
+    const furos = rings.map(p => p[0].map(([x,y])=>[y,x]));
+
     [mapChuva,mapRadar,mapRisco,mapRegioes].forEach(m=>{
-        L.geoJSON(sergipe,{ style:{ color:"#00f0ff", weight:3, fill:false } }).addTo(m);
+        // escurece tudo fora de Sergipe
+        L.polygon([mundo, ...furos],{
+            stroke:false, fillColor:"#06101c", fillOpacity:0.45, interactive:false
+        }).addTo(m);
     });
 })
 .catch(e => console.warn("⚠️ Contorno de Sergipe não carregado:", e.message));
@@ -1236,78 +1245,351 @@ municipios.forEach((c, index) => {
 });
 }
 
+// ===== PROCESSAMENTO DE IMAGEM (radar e nuvens) =====
+
+// Carrega imagem tentando liberar leitura de pixels (CORS); se o servidor não permitir, carrega normal
+function carregarImagem(url, cb){
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => cb(img, true);
+    img.onerror = () => {
+        const img2 = new Image();
+        img2.onload = () => cb(img2, false);
+        img2.onerror = () => cb(null, false);
+        img2.src = url;
+    };
+    img.src = url;
+}
+
+// Janela deslizante (mín/máx) em uma direção — base da erosão/dilatação
+function passeJanela(src, dst, w, h, R, minimo, horizontal){
+    const len = horizontal ? w : h, linhas = horizontal ? h : w, lado = 2*R + 1;
+    for(let l = 0; l < linhas; l++){
+        const base = horizontal ? l*w : l, passo = horizontal ? 1 : w;
+        const v = k => src[base + Math.min(len-1, Math.max(0, k)) * passo];
+        let soma = 0;
+        for(let k = -R; k <= R; k++) soma += v(k);
+        for(let k = 0; k < len; k++){
+            dst[base + k*passo] = minimo ? (soma === lado ? 1 : 0) : (soma > 0 ? 1 : 0);
+            soma += v(k + R + 1) - v(k - R);
+        }
+    }
+}
+function filtroQuadrado(mask, w, h, R, minimo){
+    const tmp = new Uint8Array(w*h), out = new Uint8Array(w*h);
+    passeJanela(mask, tmp, w, h, R, minimo, true);
+    passeJanela(tmp, out, w, h, R, minimo, false);
+    return out;
+}
+
+// Remove "riscos" finos e compridos (falsos ecos radiais) mantendo áreas de chuva de verdade.
+// Chuva forte (amarelo, laranja, vermelho, rosa) nunca é removida.
+const RAIO_FILTRO = 6; // ~8 km: faixas mais finas que isso somem
+function filtrarRuidoRadar(ctx, w, h){
+    const id = ctx.getImageData(0, 0, w, h), d = id.data, n = w*h;
+    const mask = new Uint8Array(n), forte = new Uint8Array(n);
+    for(let i = 0; i < n; i++){
+        const o = i*4;
+        if(d[o+3] > 40){
+            mask[i] = 1;
+            const r = d[o], b = d[o+2];
+            if(r >= 180 && (b < 60 || b > 200)) forte[i] = 1;
+        }
+    }
+    const aberto = filtroQuadrado(filtroQuadrado(mask, w, h, RAIO_FILTRO, true), w, h, RAIO_FILTRO, false);
+    for(let i = 0; i < n; i++){
+        if(mask[i] && !aberto[i] && !forte[i]) d[i*4+3] = 0;
+    }
+    ctx.putImageData(id, 0, 0);
+}
+
+// Camada de radar desenhada em canvas (permite filtrar o ruído)
+const CamadaRadar = L.GridLayer.extend({
+    createTile(coords, done){
+        const tile = document.createElement("canvas");
+        const t = this.getTileSize();
+        tile.width = t.x; tile.height = t.y;
+        // tile de 512px no zoom z = tile do RainViewer no zoom z-1 (limite gratuito: 7)
+        const url = this.options.modelo
+            .replace("{z}", coords.z - 1).replace("{x}", coords.x).replace("{y}", coords.y);
+        carregarImagem(url, (img, cors) => {
+            if(img){
+                const ctx = tile.getContext("2d");
+                ctx.drawImage(img, 0, 0, t.x, t.y);
+                if(cors && this.options.filtrar){
+                    try { filtrarRuidoRadar(ctx, t.x, t.y); } catch(e) {}
+                }
+            }
+            done(null, tile);
+        });
+        return tile;
+    }
+});
+
 // ===== RADAR =====
-let radarFrames = [], radarTimestamps = [], radarIndex = 0, radarLayer = null, radarTimer = null;
+
+// Panes próprios: nuvens abaixo da chuva, ambos abaixo dos nomes de cidades
+mapRadar.createPane("nuvens");
+mapRadar.getPane("nuvens").style.zIndex = 300;
+mapRadar.createPane("chuva");
+mapRadar.getPane("chuva").style.zIndex = 350;
+
+const RADAR_OPACIDADE   = 0.85;
+const RADAR_VEL_MS      = 650;           // tempo de cada frame
+const RADAR_PAUSA_FIM   = 2500;          // segura mais no frame mais recente
+const RADAR_RECARGA_MS  = 5 * 60 * 1000; // busca frames novos a cada 5 min
+const RADAR_QTD_FRAMES  = 12;            // ~2 horas (frames de 10 em 10 min)
+
+let radarFrames = [];       // [{time, layer}]
+let radarIndex = 0;
+let radarTimer = null;
+let radarTocando = true;
+let radarUltimoTs = 0;
+
 async function carregarRadar(){
     try {
-        const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
-
+        const res = await fetch("https://api.rainviewer.com/public/weather-maps.json?_=" + Date.now(), { cache:"no-store" });
         if(!res.ok) throw new Error("HTTP " + res.status);
 
         const data = await res.json();
+        const passados = (data.radar && data.radar.past) || [];
+        if(!passados.length) throw new Error("sem frames");
 
-        radarFrames = data.radar.past
-            .slice(-4)
-            .map(f => `https://tilecache.rainviewer.com${f.path}/256/{z}/{x}/{y}/2/1_1.png`);
+        const maisRecente = passados[passados.length - 1].time;
+        if(maisRecente === radarUltimoTs) return; // nada novo
+        radarUltimoTs = maisRecente;
 
-        radarTimestamps = data.radar.past
-            .slice(-4)
-            .map(f => f.time);
-
-        iniciarLoopRadar();
+        montarFramesRadar(passados.slice(-RADAR_QTD_FRAMES), data.host || "https://tilecache.rainviewer.com");
 
     } catch(e) {
         console.warn("⚠️ Radar indisponível, tentando novamente em 30s:", e.message);
-        setTimeout(carregarRadar, 30000); // tenta novamente em 30 segundos
+        setTimeout(carregarRadar, 30000);
     }
 }
-function iniciarLoopRadar(){
-    if(radarTimer) clearInterval(radarTimer);
 
-    // Pré-carrega todos os frames como layers com opacidade 0
-    const radarLayers = radarFrames.map(url =>
-        L.tileLayer(url, {
+let radarLista = [], radarHost = "";
+function montarFramesRadar(lista, host){
+    radarLista = lista; radarHost = host;
+    // remove frames antigos (evita acumular camadas a cada atualização)
+    radarFrames.forEach(f => mapRadar.removeLayer(f.layer));
+
+    radarFrames = lista.map(f => ({
+        time: f.time,
+        layer: new CamadaRadar({
+            modelo: `${host}${f.path}/512/{z}/{x}/{y}/2/1_1.png`,
+            filtrar: document.getElementById("chkFiltro").checked,
+            pane: "chuva",
+            className: "radar-frame",
             opacity: 0,
-            zIndex: 100,
-            tileSize: 256,
-            minZoom: 0,
-            maxZoom: 18,
-            minNativeZoom: 0,
-            maxNativeZoom: 6,
-        }).addTo(mapRadar)
-    );
+            tileSize: 512,
+            minNativeZoom: 1,
+            maxNativeZoom: 8,
+            maxZoom: 19,
+            attribution: "Radar &copy; RainViewer"
+        })
+    }));
 
-    // Exibe o primeiro frame imediatamente
-    radarLayers[0].setOpacity(0.65);
-    radarLayer = radarLayers[0];
-    radarIndex = 1; // próximo frame começa no índice 1
+    if(document.getElementById("chkRadar").checked){
+        radarFrames.forEach(f => f.layer.addTo(mapRadar));
+    }
 
-    radarTimer = setInterval(()=>{
-        if(!radarFrames.length) return;
-
-        // Esconde todos os layers
-        radarLayers.forEach(l => l.setOpacity(0));
-
-        // Exibe o frame atual
-        radarLayers[radarIndex].setOpacity(0.65);
-        radarLayer = radarLayers[radarIndex];
-
-        // Atualiza info do frame na barra
-        const ts = radarTimestamps[radarIndex];
-        if(ts){
-            const d = new Date(ts * 1000);
-            const hh = String(d.getHours()).padStart(2,'0');
-            const mm = String(d.getMinutes()).padStart(2,'0');
-            const frameNum = radarIndex + 1;
-            const total = radarFrames.length;
-            document.getElementById("radarFrameInfo").textContent =
-                `⏱ Frame ${frameNum}/${total} — ${hh}:${mm}`;
-        }
-
-        radarIndex = (radarIndex + 1) % radarFrames.length;
-    }, 1500);
+    montarTimeline();
+    radarIndex = radarFrames.length - 1;  // começa no mais recente
+    mostrarFrame(radarIndex);
+    agendarProximoFrame();
 }
+
+function montarTimeline(){
+    const tl = document.getElementById("radarTimeline");
+    tl.innerHTML = "";
+    radarFrames.forEach((f, i) => {
+        const b = document.createElement("button");
+        const d = new Date(f.time * 1000);
+        b.title = d.toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" });
+        b.onclick = () => { pausarRadar(); radarIndex = i; mostrarFrame(i); };
+        tl.appendChild(b);
+    });
+}
+
+function mostrarFrame(i){
+    radarFrames.forEach((f, j) => f.layer.setOpacity(j === i ? RADAR_OPACIDADE : 0));
+
+    document.querySelectorAll("#radarTimeline button")
+        .forEach((b, j) => b.classList.toggle("ativo", j === i));
+
+    const f = radarFrames[i];
+    if(!f) return;
+    const d   = new Date(f.time * 1000);
+    const hm  = d.toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" });
+    const min = Math.max(0, Math.round((Date.now() - d.getTime()) / 60000));
+    const ultimo = i === radarFrames.length - 1;
+    document.getElementById("radarFrameInfo").textContent =
+        `⏱ ${hm} · ${ultimo ? "mais recente (há " + min + " min)" : "há " + min + " min"}`;
+}
+
+function agendarProximoFrame(){
+    clearTimeout(radarTimer);
+    if(!radarTocando || radarFrames.length < 2) return;
+    const atraso = radarIndex === radarFrames.length - 1 ? RADAR_PAUSA_FIM : RADAR_VEL_MS;
+    radarTimer = setTimeout(() => {
+        radarIndex = (radarIndex + 1) % radarFrames.length;
+        mostrarFrame(radarIndex);
+        agendarProximoFrame();
+    }, atraso);
+}
+
+function pausarRadar(){
+    radarTocando = false;
+    clearTimeout(radarTimer);
+    document.getElementById("btnRadarPlay").textContent = "▶";
+}
+
+document.getElementById("btnRadarPlay").onclick = () => {
+    if(radarTocando){ pausarRadar(); return; }
+    radarTocando = true;
+    document.getElementById("btnRadarPlay").textContent = "❚❚";
+    agendarProximoFrame();
+};
+
+document.getElementById("chkFiltro").onchange = () => {
+    if(!radarLista.length) return;
+    const i = radarIndex;
+    montarFramesRadar(radarLista, radarHost);
+    radarIndex = Math.min(i, radarFrames.length - 1);
+    mostrarFrame(radarIndex);
+};
+
+document.getElementById("chkRadar").onchange = e => {
+    radarFrames.forEach(f => e.target.checked ? f.layer.addTo(mapRadar) : mapRadar.removeLayer(f.layer));
+    if(e.target.checked) mostrarFrame(radarIndex);
+};
+
 carregarRadar();
+setInterval(carregarRadar, RADAR_RECARGA_MS);
+
+// ===== NUVENS (satélite GOES-East infravermelho, NASA GIBS) =====
+const GIBS_WMS   = "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi";
+const GOES_LAYER = "GOES-East_ABI_Band13_Clean_Infrared";
+
+// Infravermelho: nuvem fria = clara. Converte o brilho em transparência:
+// chão/céu limpo some, nuvens ficam brancas sobre o satélite (sem retângulos de névoa)
+const NUV_MIN = 85, NUV_MAX = 205;
+function realcarNuvens(ctx, w, h){
+    const id = ctx.getImageData(0, 0, w, h), d = id.data;
+    for(let o = 0; o < d.length; o += 4){
+        const m = Math.max(d[o], d[o+1], d[o+2]);
+        let v = (m - NUV_MIN) / (NUV_MAX - NUV_MIN);
+        v = v < 0 ? 0 : v > 1 ? 1 : v;
+        const tom = 205 + 50 * v;          // nuvens altas mais brancas
+        d[o] = tom; d[o+1] = tom; d[o+2] = Math.min(255, tom + 8);
+        d[o+3] = Math.round(Math.pow(v, 0.85) * 255 * (d[o+3] / 255));
+    }
+    ctx.putImageData(id, 0, 0);
+}
+
+const CamadaNuvens = L.GridLayer.extend({
+    options: { tempo: null },
+    createTile(coords, done){
+        const tile = document.createElement("canvas");
+        const t = this.getTileSize();
+        tile.width = t.x; tile.height = t.y;
+        const b  = this._tileCoordsToBounds(coords);
+        const sw = L.CRS.EPSG3857.project(b.getSouthWest());
+        const ne = L.CRS.EPSG3857.project(b.getNorthEast());
+        let url = `${GIBS_WMS}?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=${GOES_LAYER}` +
+                  `&STYLES=&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:3857` +
+                  `&BBOX=${sw.x},${sw.y},${ne.x},${ne.y}&WIDTH=${t.x}&HEIGHT=${t.y}`;
+        if(this.options.tempo) url += `&TIME=${this.options.tempo}`;
+        carregarImagem(url, (img, cors) => {
+            if(img){
+                const ctx = tile.getContext("2d");
+                ctx.drawImage(img, 0, 0, t.x, t.y);
+                let ok = cors;
+                if(cors){ try { realcarNuvens(ctx, t.x, t.y); } catch(e){ ok = false; } }
+                // plano B: sem acesso aos pixels, usa mistura de cores (screen)
+                if(!ok) mapRadar.getPane("nuvens").classList.add("sem-cors");
+            }
+            done(null, tile);
+        });
+        return tile;
+    }
+});
+
+const nuvensLayer = new CamadaNuvens({
+    pane: "nuvens",
+    tileSize: 512,
+    maxNativeZoom: 8,   // GOES tem ~2 km: mais que isso não ganha detalhe
+    maxZoom: 19,
+    opacity: 0.8,
+    attribution: "Nuvens &copy; NASA GIBS / NOAA GOES-East"
+});
+
+// horário GOES (de 10 em 10 min, UTC) de "minAtras" minutos atrás
+function horarioGOES(minAtras){
+    const d = new Date(Date.now() - minAtras * 60000);
+    d.setUTCSeconds(0, 0);
+    d.setUTCMinutes(Math.floor(d.getUTCMinutes() / 10) * 10);
+    return d;
+}
+
+// baixa uma miniatura de Sergipe e verifica se a imagem daquele horário já existe
+function imagemGOESExiste(d){
+    return new Promise(resolve => {
+        const sw = L.CRS.EPSG3857.project(L.latLng(-11.6,-38.3));
+        const ne = L.CRS.EPSG3857.project(L.latLng(-9.5,-36.3));
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            try {
+                const c = document.createElement("canvas");
+                c.width = c.height = 32;
+                const ctx = c.getContext("2d");
+                ctx.drawImage(img, 0, 0, 32, 32);
+                const px = ctx.getImageData(0, 0, 32, 32).data;
+                let cheios = 0;
+                for(let i = 3; i < px.length; i += 4) if(px[i] > 0) cheios++;
+                resolve(cheios > 200);
+            } catch(e) { resolve(true); } // sem permissão p/ ler pixels: assume que existe
+        };
+        img.onerror = () => resolve(false);
+        img.src = `${GIBS_WMS}?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=${GOES_LAYER}` +
+                  `&STYLES=&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:3857` +
+                  `&BBOX=${sw.x},${sw.y},${ne.x},${ne.y}&WIDTH=64&HEIGHT=64` +
+                  `&TIME=${d.toISOString().replace(".000Z","Z")}`;
+    });
+}
+
+let nuvensHorario = null;
+async function atualizarNuvens(){
+    // testa de 20 min até 2h atrás e usa a primeira imagem disponível
+    for(let atras = 20; atras <= 120; atras += 10){
+        const d = horarioGOES(atras);
+        if(nuvensHorario && d.getTime() <= nuvensHorario.getTime()) break; // já está na mais nova
+        if(await imagemGOESExiste(d)){
+            nuvensHorario = d;
+            nuvensLayer.options.tempo = d.toISOString().replace(".000Z","Z");
+            nuvensLayer.redraw();
+            break;
+        }
+    }
+    if(!mapRadar.hasLayer(nuvensLayer) && document.getElementById("chkNuvens").checked){
+        nuvensLayer.addTo(mapRadar);
+    }
+    const info = document.getElementById("nuvensInfo");
+    info.textContent = nuvensHorario
+        ? `GOES-East · imagem das ${nuvensHorario.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`
+        : "GOES-East · imagem mais recente";
+}
+
+document.getElementById("chkNuvens").onchange = e => {
+    e.target.checked ? nuvensLayer.addTo(mapRadar) : mapRadar.removeLayer(nuvensLayer);
+};
+document.getElementById("sldNuvens").oninput = e => {
+    nuvensLayer.setOpacity(e.target.value / 100);
+};
+
+atualizarNuvens();
+setInterval(atualizarNuvens, 10 * 60 * 1000);
 
 // ===== RISCO =====
 function atualizarRisco(){
@@ -1683,6 +1965,7 @@ setInterval(() => {
 // Primeira carga
 atualizarTudo();
 document.getElementById("tituloChuva").style.display = "block";
+setTimeout(()=>{ mapChuva.invalidateSize(); enquadrarSergipe(mapChuva, 90); }, 300);
 
 // ===== ROTAÇÃO AUTOMÁTICA DE ABAS (10 MIN) =====
 
@@ -1730,165 +2013,6 @@ function proximaAba() {
 
 const INTERVALO_ROTACAO = 9 * 60 * 1000 + 50 * 1000; // 9 minutos e 50 segundos em ms
 setInterval(proximaAba, INTERVALO_ROTACAO);
-// ===== SISTEMA DE ALERTAS DE INTERVALO =====
-
-const horariosIntervalo = [
-    // AJU I
-    { polo: "ARACAJU I",  inicio: "10:00", fim: "11:00" },
-    { polo: "ARACAJU I",  inicio: "18:00", fim: "19:00" },
-    // AJU II
-    { polo: "ARACAJU II", inicio: "11:00", fim: "12:00" },
-    { polo: "ARACAJU II", inicio: "19:00", fim: "20:00" },
-    // ITB
-    { polo: "ITABAIANA",    inicio: "09:40", fim: "10:40" },
-    { polo: "ITABAIANA",    inicio: "17:40", fim: "18:40" },
-    // LGT
-    { polo: "LAGARTO",    inicio: "10:40", fim: "11:40" },
-    { polo: "LAGARTO",    inicio: "18:40", fim: "19:40" },
-    // NSD
-    { polo: "GLÓRIA",    inicio: "10:40", fim: "11:40" },
-    { polo: "GLÓRIA",    inicio: "19:40", fim: "20:40" },
-    // PPR
-    { polo: "PROPRIÁ",    inicio: "09:40", fim: "10:40" },
-    { polo: "PROPRIÁ",    inicio: "17:40", fim: "18:40" },
-    // MRI
-    { polo: "MARUIM",    inicio: "11:40", fim: "12:40" },
-    { polo: "MARUIM",    inicio: "19:40", fim: "20:40" },
-    // SCT
-    { polo: "SÃO CRISTÓVÃO",    inicio: "11:40", fim: "12:40" },
-    { polo: "SÃO CRISTÓVÃO",    inicio: "19:40", fim: "20:40" },
-];
-
-const ESPERA_APOS_VOZ_SEG = 4; // segundos de barra após a 2ª fala terminar
-const alertasDisparados = new Set(); // evita repetição no mesmo minuto
-let timerFecharAlerta = null;
-
-function horaParaMinutos(hora) {
-    const [h, m] = hora.split(":").map(Number);
-    return h * 60 + m;
-}
-
-function dispararAlerta(polo, inicio, fim, chave) {
-    if (alertasDisparados.has(chave)) return;
-    alertasDisparados.add(chave);
-
-    // Singular ou plural dependendo da quantidade de polos
-    const multiplos = polo.includes(" e ");
-    const prefixo   = multiplos ? "Operadores dos polos" : "Operador do polo";
-    const verbo     = multiplos ? "passem" : "passe";
-
-    // Preenche o overlay
-    document.getElementById("alertaPolo").textContent = polo;
-    document.getElementById("alertaMensagem").innerHTML =
-        `${prefixo} <strong id="alertaPoloNome">${polo}</strong>,<br>
-         está na hora do intervalo.<br>
-         Por favor, ${verbo} o turno imediatamente!`;
-    document.getElementById("alertaHorario").textContent = `🕐 ${inicio} às ${fim}`;
-
-    // Oculta a barra até a voz terminar
-    const barra = document.getElementById("alertaBarra");
-    barra.style.animation = "none";
-    barra.style.opacity   = "0";
-    barra.offsetHeight; // reflow
-
-    // Mostra overlay
-    document.getElementById("alertaIntervalo").classList.add("visivel");
-
-    // Voz — fecha SOMENTE após a 2ª repetição terminar
-    falarAlerta(polo, inicio, fim, () => {
-        barra.style.setProperty("--duracao", ESPERA_APOS_VOZ_SEG + "s");
-        barra.style.opacity   = "1";
-        barra.style.animation = "";
-        if (timerFecharAlerta) clearTimeout(timerFecharAlerta);
-        timerFecharAlerta = setTimeout(fecharAlerta, ESPERA_APOS_VOZ_SEG * 1000);
-    });
-}
-
-function fecharAlerta() {
-    document.getElementById("alertaIntervalo").classList.remove("visivel");
-    if (timerFecharAlerta) clearTimeout(timerFecharAlerta);
-    window.speechSynthesis.cancel();
-}
-
-function falarAlerta(polo, inicio, fim, onComplete) {
-    if (!window.speechSynthesis) {
-        if (onComplete) onComplete();
-        return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    const multiplos   = polo.includes(" e ");
-    const prefixoVoz  = multiplos ? `operadores dos polos ${polo}` : `operador do polo ${polo}`;
-    const verboVoz    = multiplos ? "passem" : "passe";
-    const texto = `Atenção! ${prefixoVoz.charAt(0).toUpperCase() + prefixoVoz.slice(1)}, está na hora do intervalo, das ${inicio} às ${fim}. Por favor, ${verboVoz} o turno imediatamente!`;
-
-    const utterance = new SpeechSynthesisUtterance(texto);
-    utterance.lang   = "pt-BR";
-    utterance.rate   = 0.92;
-    utterance.pitch  = 1.05;
-    utterance.volume = 1;
-
-    // Tenta usar voz em português se disponível
-    const vozes = window.speechSynthesis.getVoices();
-    const vozPT = vozes.find(v => v.lang === "pt-BR") || vozes.find(v => v.lang.startsWith("pt"));
-    if (vozPT) utterance.voice = vozPT;
-
-    // Repete 2 vezes e só chama onComplete ao final da 2ª
-    let repeticoes = 0;
-    utterance.onend = () => {
-        repeticoes++;
-        if (repeticoes < 2) {
-            setTimeout(() => window.speechSynthesis.speak(utterance), 800);
-        } else {
-            if (onComplete) onComplete();
-        }
-    };
-
-    window.speechSynthesis.speak(utterance);
-}
-
-// Verifica a cada 30 segundos
-function verificarHorariosIntervalo() {
-    const agora    = new Date();
-    const minAtual = agora.getHours() * 60 + agora.getMinutes();
-
-    // Limpa alertas disparados quando o minuto muda (para não travar para sempre)
-    const chaveMinuto = `min-${minAtual}`;
-    if (!alertasDisparados.has(chaveMinuto)) {
-        alertasDisparados.add(chaveMinuto);
-    }
-
-    // Agrupa todos os polos que iniciam no mesmo horário
-    const grupos = {};
-    horariosIntervalo.forEach(h => {
-        const minInicio = horaParaMinutos(h.inicio);
-        if (minAtual === minInicio) {
-            const chaveHorario = `${h.inicio}-${h.fim}`;
-            if (!grupos[chaveHorario]) {
-                grupos[chaveHorario] = { polos: [], inicio: h.inicio, fim: h.fim };
-            }
-            grupos[chaveHorario].polos.push(h.polo);
-        }
-    });
-
-    // Dispara um único alerta por grupo (polos concatenados com " e ")
-    Object.values(grupos).forEach(grupo => {
-        const poloConcatenado = grupo.polos.join(" e ");
-        const chave = `${poloConcatenado}-${grupo.inicio}`;
-        dispararAlerta(poloConcatenado, grupo.inicio, grupo.fim, chave);
-    });
-}
-
-// Limpa set de disparados a cada hora (para alertas noturnos repetirem no dia seguinte)
-setInterval(() => {
-    const agora = new Date();
-    if (agora.getMinutes() === 0) alertasDisparados.clear();
-}, 60 * 1000);
-
-setInterval(verificarHorariosIntervalo, 30 * 1000);
-verificarHorariosIntervalo(); // roda imediatamente ao carregar
-
 
 </script>
 
